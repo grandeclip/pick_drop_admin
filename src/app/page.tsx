@@ -40,11 +40,17 @@ export default function Home() {
     e.preventDefault();
     console.log("상품 데이터:", productData);
 
-    //   const result = await supabase.from("products").insert({
-    //     name: productData.name,
-    //     description: productData.description,
-    //     image_url: productData.imageName,
-    //   })
+    // const uploadImage = async () => {
+    //   if (!productData.imageFile) return;
+    //   const file = productData.imageFile;
+
+    // }
+
+    // const result = await supabase.from("products").insert({
+    //   name: productData.name,
+    //   description: productData.description,
+    // });
+    // console.log(result);
   };
 
   const handleProductSetSubmit = (e: React.FormEvent) => {

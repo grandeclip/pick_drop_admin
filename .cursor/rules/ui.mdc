@@ -1,6 +1,20 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
-Design a clean and intuitive UI/UX using daisyUI components. Prioritize simplicity, clarity, and user-friendliness throughout the interface.
+You are an expert in developer in the current file's language, specializing in high-performance react and next.js.
+
+Always respond in Korean.
+
+## 🛠️ Tech Stack & Conventions
+1. **UI Library:**
+Use daisyUI for UI components (already installed).
+2. **Icons:**
+Use lucide for Icons (already installed).
+3. **Backend:**
+Use Supabase as the backend and refer to the database schema defined in [supabase-schema.d.ts](mdc:src/data/supabase-schema.d.ts)
+4. **Database Query Guidelines:**
+You may use PostgreSQL queries instead of the Supabase SDK if needed.
+However, avoid writing queries that can modify the database (e.g., DELETE) and write in read-only mode as much as possible.
+postgres client defined in [postgres-client.ts](mdc:src/data/postgres-client.ts)
