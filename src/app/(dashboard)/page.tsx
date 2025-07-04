@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import ProductForm from "../components/ProductForm";
 import ProductSetForm from "../components/ProductSetForm";
+import { supabase } from "../lib/supabase";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -37,13 +38,31 @@ export default function Home() {
 
   const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("상품 데이터:", productData);
 
-    // const uploadImage = async () => {
-    //   if (!productData.imageFile) return;
-    //   const file = productData.imageFile;
+    // const productId = await supabase
+    //   .from("products")
+    //   .insert({
+    //     name: productData.name,
+    //     description: productData.description,
+    //   })
+    //   .select("product_id")
+    //   .single();
 
-    // }
+    // console.log(productId);
+
+    if (!productData.imageFile) {
+      console.log("이미지 파일이 없습니다");
+      return;
+    }
+    const file = productData.imageFile;
+    const { data, error } = await supabase.storage
+      .from("products")
+      .upload("hello_test.jpeg", file);
+    if (!data) {
+      console.log("error: ", error);
+    } else {
+      console.log("data: ", data);
+    }
 
     // const result = await supabase.from("products").insert({
     //   name: productData.name,
