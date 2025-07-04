@@ -1,11 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Header from "./components/Header";
-import Sidebar from "./components/Sidebar";
-import ProductForm from "./components/ProductForm";
-import ProductSetForm from "./components/ProductSetForm";
-import { supabase } from "./lib/supabase";
+import Header from "../components/Header";
+import Sidebar from "../components/Sidebar";
+import ProductForm from "../components/ProductForm";
+import ProductSetForm from "../components/ProductSetForm";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
