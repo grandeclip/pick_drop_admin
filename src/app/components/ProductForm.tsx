@@ -172,6 +172,7 @@ export default function ProductForm({
 
         <div className="form-control mt-8">
           <button
+            onClick={handleProductSubmit}
             type="submit"
             className="btn bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-none hover:from-emerald-600 hover:to-teal-700 rounded-2xl h-14 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 p-4"
           >

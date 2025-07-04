@@ -5,6 +5,7 @@ import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import ProductForm from "./components/ProductForm";
 import ProductSetForm from "./components/ProductSetForm";
+import { supabase } from "./lib/supabase";
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
@@ -35,10 +36,15 @@ export default function Home() {
     setMounted(true);
   }, []);
 
-  const handleProductSubmit = (e: React.FormEvent) => {
+  const handleProductSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("상품 데이터:", productData);
-    // TODO: 상품 등록 로직 구현
+
+    //   const result = await supabase.from("products").insert({
+    //     name: productData.name,
+    //     description: productData.description,
+    //     image_url: productData.imageName,
+    //   })
   };
 
   const handleProductSetSubmit = (e: React.FormEvent) => {
