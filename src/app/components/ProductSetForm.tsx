@@ -22,11 +22,52 @@ interface ProductSetFormProps {
   handleProductSetSubmit: (e: React.FormEvent) => void;
 }
 
+const PLATFORM_OPTIONS = [
+  "musinsa",
+  "oliveyoung",
+  "ably",
+  "kurly",
+  "zigzag",
+  "hwahae",
+  "manyo",
+  "fwee",
+  "peripera",
+  "coupang",
+  "clubclio",
+  "romand",
+  "amoremall",
+  "snature",
+  "roundlab",
+  "ahc",
+  "hera",
+  "banila",
+  "torriden",
+  "medihealshop",
+  "wellage",
+  "illiyoon",
+  "vdl",
+  "dasique",
+  "naming",
+  "unove",
+  "dalba",
+];
+
 export default function ProductSetForm({
   productSetData,
   setProductSetData,
   handleProductSetSubmit,
 }: ProductSetFormProps) {
+  const resetForm = () => {
+    setProductSetData({
+      productId: "",
+      name: "",
+      originalPrice: "",
+      discountedPrice: "",
+      platform: "",
+      shippingCost: "",
+      link: "",
+    });
+  };
   return (
     <div>
       <div className="flex items-center space-x-4 mb-8">
@@ -51,7 +92,13 @@ export default function ProductSetForm({
         </div>
       </div>
 
-      <form onSubmit={handleProductSetSubmit} className="space-y-6">
+      <form
+        onSubmit={(e) => {
+          handleProductSetSubmit(e);
+          resetForm();
+        }}
+        className="space-y-6"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="form-control">
             <label className="label">
@@ -205,22 +252,35 @@ export default function ProductSetForm({
                     d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9"
                   />
                 </svg>
-                <span>플랫폼 이름</span>
+                <span>플랫폼 선택</span>
               </span>
             </label>
-            <input
-              type="text"
-              className="input input-bordered w-full bg-white/50 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-2xl h-14 text-slate-700"
-              value={productSetData.platform}
-              onChange={(e) =>
-                setProductSetData((prev) => ({
-                  ...prev,
-                  platform: e.target.value,
-                }))
-              }
-              placeholder="플랫폼 이름을 입력하세요"
-              required
-            />
+
+            <div className="flex flex-wrap gap-2">
+              {PLATFORM_OPTIONS.map((platform) => {
+                const isSelected = productSetData.platform === platform;
+                return (
+                  <button
+                    key={platform}
+                    type="button"
+                    className={
+                      "px-4 py-2 rounded-full border text-sm font-medium transition-all duration-200 " +
+                      (isSelected
+                        ? "bg-indigo-500 text-white border-indigo-600"
+                        : "bg-white text-slate-600 border-slate-200 hover:bg-slate-100")
+                    }
+                    onClick={() =>
+                      setProductSetData((prev) => ({
+                        ...prev,
+                        platform: platform,
+                      }))
+                    }
+                  >
+                    {platform}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="form-control">
@@ -274,9 +334,10 @@ export default function ProductSetForm({
                   d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"
                 />
               </svg>
-              <span>링크</span>
+              <span>링크 (하나씩만 입력해주세요)</span>
             </span>
           </label>
+
           <input
             type="url"
             className="input input-bordered w-full bg-white/50 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-2xl h-14 text-slate-700"
@@ -291,7 +352,6 @@ export default function ProductSetForm({
             required
           />
         </div>
-
         <div className="form-control mt-8">
           <button
             type="submit"

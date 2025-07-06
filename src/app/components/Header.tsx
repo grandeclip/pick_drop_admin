@@ -1,4 +1,5 @@
 export default function Header() {
+  const env = process.env.NODE_ENV;
   return (
     <div className="bg-white/70 backdrop-blur-sm border-b border-indigo-100 sticky top-0 z-50">
       <div className="container mx-auto px-4 py-6">
@@ -20,7 +21,9 @@ export default function Header() {
           </div>
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              PickDrop Admin
+              {env === "development"
+                ? "PickDrop Admin (Dev)"
+                : "PickDrop Admin"}
             </h1>
             <p className="text-slate-600 text-sm">
               상품 및 상품세트 관리 시스템

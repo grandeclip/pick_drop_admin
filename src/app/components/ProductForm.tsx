@@ -1,3 +1,5 @@
+import { useRef } from "react";
+
 interface ProductFormProps {
   productData: {
     name: string;
@@ -23,6 +25,21 @@ export default function ProductForm({
   handleProductSubmit,
   handleImageUpload,
 }: ProductFormProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const resetForm = () => {
+    setProductData({
+      name: "",
+      description: "",
+      imageFile: null,
+      imageName: "",
+    });
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""; // ← 파일 선택 비우기
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center space-x-4 mb-8">
@@ -47,7 +64,13 @@ export default function ProductForm({
         </div>
       </div>
 
-      <form onSubmit={handleProductSubmit} className="space-y-6">
+      <form
+        onSubmit={(e) => {
+          handleProductSubmit(e);
+          resetForm();
+        }}
+        className="space-y-6"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="form-control">
             <label className="label">
