@@ -209,6 +209,7 @@ export default function Home() {
           .insert({
             product_id: productSetData.productId,
             link_url: link,
+            platform_id: "d7aa0533-ea87-46b5-84d2-aa35ccce9506",
           });
 
         if (productSetError) {
