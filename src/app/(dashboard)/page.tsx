@@ -7,82 +7,88 @@ import ProductForm from "../components/ProductForm";
 import ProductSetForm from "../components/ProductSetForm";
 import { supabase } from "../lib/supabase";
 
-async function insertProductSet(productSetData: {
-  productId: string;
-  name: string;
-  originalPrice: string;
-  discountedPrice: string;
-  shippingCost: string;
-  platform: string;
-  link: string;
-}) {
-  const {
-    productId,
-    name,
-    originalPrice,
-    discountedPrice,
-    shippingCost,
-    platform,
-    link,
-  } = productSetData;
+// async function insertProductSet(productSetData: {
+//   productId: string;
+//   name: string;
+//   originalPrice: string;
+//   discountedPrice: string;
+//   shippingCost: string;
+//   platform: string;
+//   link: string;
+// }) {
+//   const {
+//     productId,
+//     name,
+//     originalPrice,
+//     discountedPrice,
+//     shippingCost,
+//     platform,
+//     link,
+//   } = productSetData;
 
-  const { data: platformData, error: platformError } = await supabase
-    .from("platforms")
-    .select("platform_id")
-    .eq("name", platform)
-    .single();
+//   const { data: platformData, error: platformError } = await supabase
+//     .from("platforms")
+//     .select("platform_id")
+//     .eq("name", platform)
+//     .single();
 
-  if (platformError || !platformData) {
-    console.error(`❌ 플랫폼 '${platform}' 찾기 실패`, platformError);
-    return { success: false, error: "플랫폼을 찾을 수 없습니다." };
-  }
+//   if (platformError || !platformData) {
+//     console.error(`❌ 플랫폼 '${platform}' 찾기 실패`, platformError);
+//     return { success: false, error: "플랫폼을 찾을 수 없습니다." };
+//   }
 
-  const platformId = platformData.platform_id;
+//   const platformId = platformData.platform_id;
 
-  const { data: insertedProductSet, error: insertError } = await supabase
-    .from("product_sets")
-    .insert({
-      product_id: productId,
-      platform_id: platformId,
-      product_name: name,
-      original_price: parseInt(originalPrice, 10) || 0,
-      discount_price: parseInt(discountedPrice, 10) || null,
-      shipping_fee: parseInt(shippingCost, 10) || 0,
-      link_url: link,
-      md_pick: false,
-    })
-    .select("product_set_id")
-    .single();
+//   const { data: insertedProductSet, error: insertError } = await supabase
+//     .from("product_sets")
+//     .insert({
+//       product_id: productId,
+//       platform_id: platformId,
+//       product_name: name,
+//       link_url: link,
+//       shipping_fee: parseInt(shippingCost, 10) || 0,
+//       md_pick: false,
+//     })
+//     .select("product_set_id")
+//     .single();
 
-  if (insertError || !insertedProductSet) {
-    console.error("❌ product_sets insert 실패:", insertError);
-    return { success: false, error: insertError?.message };
-  }
+//   if (insertError || !insertedProductSet) {
+//     console.error("❌ product_sets insert 실패:", insertError);
+//     return { success: false, error: insertError?.message };
+//   }
 
-  const productSetId = insertedProductSet.product_set_id;
+//   const productSetId = insertedProductSet.product_set_id;
 
-  const { data: priceHistoryData, error: priceHistoryError } = await supabase
-    .from("product_price_histories")
-    .insert({
-      product_set_id: productSetId,
-      original_price: parseInt(originalPrice, 10) || 0,
-      discount_price: parseInt(discountedPrice, 10) || null,
-      shipping_fee: parseInt(shippingCost, 10) || 0,
-      price_metadata: {},
-    });
+//   const { data: priceHistoryData, error: priceHistoryError } = await supabase
+//     .from("product_price_histories")
+//     .insert({
+//       product_set_id: productSetId,
+//       original_price: parseInt(originalPrice, 10) || 0,
+//       discount_price: parseInt(discountedPrice, 10) || null,
+//       shipping_fee: parseInt(shippingCost, 10) || 0,
+//       price_metadata: {},
+//     });
 
-  console.log("priceHistoryData: ", priceHistoryData);
+//   console.log("priceHistoryData: ", priceHistoryData);
 
-  if (priceHistoryError) {
-    console.error("❌ price history insert 실패:", priceHistoryError);
-    return { success: false, error: priceHistoryError.message };
-  }
+//   if (priceHistoryError) {
+//     console.error("❌ price history insert 실패:", priceHistoryError);
+//     return { success: false, error: priceHistoryError.message };
+//   }
 
-  return {
-    success: true,
-    productSetId,
-    priceHistoryInserted: true,
-  };
+//   return {
+//     success: true,
+//     productSetId,
+//     priceHistoryInserted: true,
+//   };
+// }
+
+function parseLinks(rawInput: string): string[] {
+  return rawInput
+    .split(",")
+    .map((link) => link.replace(/"/g, ""))
+    .map((link) => link.trim())
+    .filter((link) => link.length > 0);
 }
 
 export default function Home() {
@@ -104,11 +110,6 @@ export default function Home() {
   // 상품세트 등록 상태
   const [productSetData, setProductSetData] = useState({
     productId: "",
-    name: "",
-    originalPrice: "",
-    discountedPrice: "",
-    platform: "",
-    shippingCost: "",
     link: "",
   });
 
@@ -171,12 +172,13 @@ export default function Home() {
       console.error("Error submitting product:", error);
     } finally {
       setIsSubmitting(false);
-      setProductData({
+      setProductData((prev) => ({
+        ...prev,
         name: "",
         description: "",
         imageFile: null,
         imageName: "",
-      });
+      }));
     }
   };
 
@@ -187,18 +189,47 @@ export default function Home() {
     console.log("상품세트 데이터:", productSetData);
 
     try {
-      const result = await insertProductSet(productSetData);
+      const links = parseLinks(productSetData.link);
+      console.log("links: ", links);
 
-      if (result.success) {
-        alert("상품세트가 성공적으로 등록되었습니다.");
-      } else {
-        alert(`등록 실패: ${result.error}`);
+      const { error: productError } = await supabase
+        .from("products")
+        .select("product_id")
+        .eq("product_id", productSetData.productId)
+        .single();
+
+      if (productError) {
+        console.log("error: ", productError);
+        return;
       }
+
+      await fetch("/api/trigger", {
+        method: "POST",
+        body: JSON.stringify({ productId: productSetData.productId }),
+      });
     } catch (error) {
-      console.error("Error submitting product set:", error);
+      console.log("Error submitting product set:", error);
     } finally {
       setIsSubmitting(false);
+      setProductSetData(() => ({
+        productId: "",
+        link: "",
+      }));
     }
+
+    // try {
+    //   const result = await insertProductSet(productSetData);
+
+    //   if (result.success) {
+    //     alert("상품세트가 성공적으로 등록되었습니다.");
+    //   } else {
+    //     alert(`등록 실패: ${result.error}`);
+    //   }
+    // } catch (error) {
+    //   console.error("Error submitting product set:", error);
+    // } finally {
+    //   setIsSubmitting(false);
+    // }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
