@@ -199,7 +199,7 @@ export default function Home() {
         .single();
 
       if (productError) {
-        console.log("error: ", productError);
+        console.log("products select error: ", productError);
         return;
       }
 
