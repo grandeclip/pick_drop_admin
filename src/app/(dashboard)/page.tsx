@@ -7,7 +7,7 @@ import ProductForm from "../components/ProductForm";
 import ProductSetForm from "../components/ProductSetForm";
 import { supabase } from "../lib/supabase";
 
-export async function insertProductSet(productSetData: {
+async function insertProductSet(productSetData: {
   productId: string;
   name: string;
   originalPrice: string;
@@ -39,7 +39,6 @@ export async function insertProductSet(productSetData: {
 
   const platformId = platformData.platform_id;
 
-  // 2. product_sets insert
   const { data: insertedProductSet, error: insertError } = await supabase
     .from("product_sets")
     .insert({
@@ -52,7 +51,7 @@ export async function insertProductSet(productSetData: {
       link_url: link,
       md_pick: false,
     })
-    .select("product_set_id") // ← 여기서 product_set_id 받아옴
+    .select("product_set_id")
     .single();
 
   if (insertError || !insertedProductSet) {
@@ -62,7 +61,6 @@ export async function insertProductSet(productSetData: {
 
   const productSetId = insertedProductSet.product_set_id;
 
-  // 3. product_price_histories insert
   const { data: priceHistoryData, error: priceHistoryError } = await supabase
     .from("product_price_histories")
     .insert({
@@ -72,6 +70,8 @@ export async function insertProductSet(productSetData: {
       shipping_fee: parseInt(shippingCost, 10) || 0,
       price_metadata: {},
     });
+
+  console.log("priceHistoryData: ", priceHistoryData);
 
   if (priceHistoryError) {
     console.error("❌ price history insert 실패:", priceHistoryError);
@@ -130,6 +130,11 @@ export default function Home() {
         })
         .select("product_id")
         .single();
+
+      if (error) {
+        console.log("error: ", error);
+        return;
+      }
 
       console.log(data?.product_id);
 
