@@ -186,11 +186,9 @@ export default function Home() {
     e.preventDefault();
     if (isSubmitting) return;
     setIsSubmitting(true);
-    console.log("상품세트 데이터:", productSetData);
 
     try {
       const links = parseLinks(productSetData.link);
-      console.log("links: ", links);
 
       const { error: productError } = await supabase
         .from("products")
@@ -202,6 +200,8 @@ export default function Home() {
         console.log("products select error: ", productError);
         return;
       }
+
+      console.log("Success select productID!!");
 
       for (const link of links) {
         const { error: productSetError } = await supabase
@@ -216,6 +216,8 @@ export default function Home() {
           continue;
         }
       }
+
+      console.log("Success insert product_sets!!");
 
       await fetch("/api/trigger", {
         method: "POST",
