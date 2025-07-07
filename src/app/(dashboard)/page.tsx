@@ -203,6 +203,20 @@ export default function Home() {
         return;
       }
 
+      for (const link of links) {
+        const { error: productSetError } = await supabase
+          .from("product_sets")
+          .insert({
+            product_id: productSetData.productId,
+            link_url: link,
+          });
+
+        if (productSetError) {
+          console.log("product_sets insert error: ", productSetError);
+          continue;
+        }
+      }
+
       await fetch("/api/trigger", {
         method: "POST",
         body: JSON.stringify({ productId: productSetData.productId }),
