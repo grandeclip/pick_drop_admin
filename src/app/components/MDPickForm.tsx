@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { supabase } from "../lib/supabase";
+import type { PostgrestError } from "@supabase/supabase-js";
 
 interface SearchResult {
   product_id: string;
@@ -14,6 +15,17 @@ interface SearchResult {
   original_price: number;
   discount_price: number | null;
   shipping_fee: number;
+}
+
+interface ProductSetWithPlatform {
+  product_set_id: string;
+  product_id: string;
+  product_name: string;
+  md_pick: boolean;
+  link_url: string;
+  platforms: {
+    name: string;
+  } | null;
 }
 
 export default function MDPickForm() {
@@ -50,7 +62,7 @@ export default function MDPickForm() {
       // 2. 찾은 product_id들로 product_sets와 platforms 조인해서 가져오기
       const productIds = products.map((p) => p.product_id);
 
-      const { data: productSets, error: productSetsError } = await supabase
+      const { data: productSets, error: productSetsError } = (await supabase
         .from("product_sets")
         .select(
           `
@@ -65,7 +77,10 @@ export default function MDPickForm() {
         `
         )
         .in("product_id", productIds)
-        .order("product_name");
+        .order("product_name")) as {
+        data: ProductSetWithPlatform[] | null;
+        error: PostgrestError | null;
+      };
 
       if (productSetsError) {
         console.error("Product sets 검색 에러:", productSetsError);
@@ -115,7 +130,7 @@ export default function MDPickForm() {
           product_set_name: ps.product_name || "",
           md_pick: ps.md_pick,
           link_url: ps.link_url || "",
-          platform_name: (ps.platforms as any)?.name || "",
+          platform_name: ps.platforms?.name || "",
           original_price: latestPrice?.original_price || 0,
           discount_price: latestPrice?.discount_price || null,
           shipping_fee: latestPrice?.shipping_fee || 0,
