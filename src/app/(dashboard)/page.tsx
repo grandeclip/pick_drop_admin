@@ -105,6 +105,7 @@ export default function Home() {
     description: "",
     imageFile: null as File | null,
     imageName: "",
+    brandName: "",
   });
 
   // 상품세트 등록 상태

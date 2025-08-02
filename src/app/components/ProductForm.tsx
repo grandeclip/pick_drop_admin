@@ -6,6 +6,7 @@ interface ProductFormProps {
     description: string;
     imageFile: File | null;
     imageName: string;
+    brandName: string;
   };
   setProductData: React.Dispatch<
     React.SetStateAction<{
@@ -13,6 +14,7 @@ interface ProductFormProps {
       description: string;
       imageFile: File | null;
       imageName: string;
+      brandName: string;
     }>
   >;
   handleProductSubmit: (e: React.FormEvent) => void;
@@ -33,6 +35,7 @@ export default function ProductForm({
       description: "",
       imageFile: null,
       imageName: "",
+      brandName: "unknown",
     });
 
     if (fileInputRef.current) {
@@ -98,7 +101,7 @@ export default function ProductForm({
               onChange={(e) =>
                 setProductData((prev) => ({
                   ...prev,
-                  name: e.target.value,
+                  name: e.target.value.normalize("NFC"),
                 }))
               }
               placeholder="상품 이름을 입력하세요"
@@ -184,7 +187,7 @@ export default function ProductForm({
             onChange={(e) =>
               setProductData((prev) => ({
                 ...prev,
-                description: e.target.value,
+                description: e.target.value.normalize("NFC"),
               }))
             }
             placeholder="상품에 대한 자세한 설명을 입력하세요..."
