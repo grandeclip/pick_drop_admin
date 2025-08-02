@@ -5,83 +5,8 @@ import Header from "../components/Header";
 import Sidebar from "../components/Sidebar";
 import ProductForm from "../components/ProductForm";
 import ProductSetForm from "../components/ProductSetForm";
+import MDPickForm from "../components/MDPickForm";
 import { supabase } from "../lib/supabase";
-
-// async function insertProductSet(productSetData: {
-//   productId: string;
-//   name: string;
-//   originalPrice: string;
-//   discountedPrice: string;
-//   shippingCost: string;
-//   platform: string;
-//   link: string;
-// }) {
-//   const {
-//     productId,
-//     name,
-//     originalPrice,
-//     discountedPrice,
-//     shippingCost,
-//     platform,
-//     link,
-//   } = productSetData;
-
-//   const { data: platformData, error: platformError } = await supabase
-//     .from("platforms")
-//     .select("platform_id")
-//     .eq("name", platform)
-//     .single();
-
-//   if (platformError || !platformData) {
-//     console.error(`❌ 플랫폼 '${platform}' 찾기 실패`, platformError);
-//     return { success: false, error: "플랫폼을 찾을 수 없습니다." };
-//   }
-
-//   const platformId = platformData.platform_id;
-
-//   const { data: insertedProductSet, error: insertError } = await supabase
-//     .from("product_sets")
-//     .insert({
-//       product_id: productId,
-//       platform_id: platformId,
-//       product_name: name,
-//       link_url: link,
-//       shipping_fee: parseInt(shippingCost, 10) || 0,
-//       md_pick: false,
-//     })
-//     .select("product_set_id")
-//     .single();
-
-//   if (insertError || !insertedProductSet) {
-//     console.error("❌ product_sets insert 실패:", insertError);
-//     return { success: false, error: insertError?.message };
-//   }
-
-//   const productSetId = insertedProductSet.product_set_id;
-
-//   const { data: priceHistoryData, error: priceHistoryError } = await supabase
-//     .from("product_price_histories")
-//     .insert({
-//       product_set_id: productSetId,
-//       original_price: parseInt(originalPrice, 10) || 0,
-//       discount_price: parseInt(discountedPrice, 10) || null,
-//       shipping_fee: parseInt(shippingCost, 10) || 0,
-//       price_metadata: {},
-//     });
-
-//   console.log("priceHistoryData: ", priceHistoryData);
-
-//   if (priceHistoryError) {
-//     console.error("❌ price history insert 실패:", priceHistoryError);
-//     return { success: false, error: priceHistoryError.message };
-//   }
-
-//   return {
-//     success: true,
-//     productSetId,
-//     priceHistoryInserted: true,
-//   };
-// }
 
 function parseLinks(rawInput: string): string[] {
   return rawInput
@@ -93,9 +18,9 @@ function parseLinks(rawInput: string): string[] {
 
 export default function Home() {
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"product" | "productSet">(
-    "product"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "product" | "productSet" | "mdpick"
+  >("product");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -286,12 +211,14 @@ export default function Home() {
                   handleProductSubmit={handleProductSubmit}
                   handleImageUpload={handleImageUpload}
                 />
-              ) : (
+              ) : activeTab === "productSet" ? (
                 <ProductSetForm
                   productSetData={productSetData}
                   setProductSetData={setProductSetData}
                   handleProductSetSubmit={handleProductSetSubmit}
                 />
+              ) : (
+                <MDPickForm />
               )}
             </div>
           </div>
