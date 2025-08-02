@@ -46,7 +46,7 @@ export default function MDPickForm() {
       const { data: products, error: productsError } = await supabase
         .from("products")
         .select("product_id, name")
-        .or(`product_id.eq.${searchTerm},name.ilike.%${searchTerm}%`);
+        .or(`product_id.eq.${searchTerm},name.ilike.*${searchTerm}*`);
 
       if (productsError) {
         console.error("Products 검색 에러:", productsError);
