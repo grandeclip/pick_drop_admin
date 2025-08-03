@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { validate as uuidValidate } from "uuid";
 import { supabase } from "../lib/supabase";
 import type { PostgrestError } from "@supabase/supabase-js";
 
@@ -42,11 +43,21 @@ export default function MDPickForm() {
     try {
       const searchTerm = searchValue.trim();
 
-      // 1. products 테이블에서 검색 (product_id 또는 name으로)
-      const { data: products, error: productsError } = await supabase
-        .from("products")
-        .select("product_id, name")
-        .or(`product_id.eq.${searchTerm},name.ilike.*${searchTerm}*`);
+      // UUID 형식 검증
+      const isUuid = uuidValidate(searchTerm);
+
+      // 1. products 테이블에서 검색 (UUID 형식이면 product_id로, 아니면 name으로만)
+      let productsQuery = supabase.from("products").select("product_id, name");
+
+      if (isUuid) {
+        // UUID 형식이면 product_id로 정확히 매칭
+        productsQuery = productsQuery.eq("product_id", searchTerm);
+      } else {
+        // UUID 형식이 아니면 name으로만 검색
+        productsQuery = productsQuery.ilike("name", `*${searchTerm}*`);
+      }
+
+      const { data: products, error: productsError } = await productsQuery;
 
       if (productsError) {
         console.error("Products 검색 에러:", productsError);
@@ -225,7 +236,7 @@ export default function MDPickForm() {
             <input
               type="text"
               value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              onChange={(e) => setSearchValue(e.target.value.normalize("NFC"))}
               onKeyPress={handleKeyPress}
               placeholder="상품 ID 또는 상품명을 입력하세요"
               className="flex-1 px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-colors"

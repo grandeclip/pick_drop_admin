@@ -6,6 +6,7 @@ import Sidebar from "../components/Sidebar";
 import ProductForm from "../components/ProductForm";
 import ProductSetForm from "../components/ProductSetForm";
 import MDPickForm from "../components/MDPickForm";
+import BrandForm from "../components/BrandForm";
 import { supabase } from "../lib/supabase";
 
 function parseLinks(rawInput: string): string[] {
@@ -19,7 +20,7 @@ function parseLinks(rawInput: string): string[] {
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "product" | "productSet" | "mdpick"
+    "product" | "productSet" | "mdpick" | "brand"
   >("product");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,7 +31,7 @@ export default function Home() {
     description: "",
     imageFile: null as File | null,
     imageName: "",
-    brandName: "",
+    brand_id: "",
   });
 
   // 상품세트 등록 상태
@@ -54,6 +55,7 @@ export default function Home() {
         .insert({
           name: productData.name,
           description: productData.description,
+          brand_id: productData.brand_id,
         })
         .select("product_id")
         .single();
@@ -104,6 +106,7 @@ export default function Home() {
         description: "",
         imageFile: null,
         imageName: "",
+        brand_id: "",
       }));
     }
   };
@@ -217,8 +220,10 @@ export default function Home() {
                   setProductSetData={setProductSetData}
                   handleProductSetSubmit={handleProductSetSubmit}
                 />
-              ) : (
+              ) : activeTab === "mdpick" ? (
                 <MDPickForm />
+              ) : (
+                <BrandForm />
               )}
             </div>
           </div>

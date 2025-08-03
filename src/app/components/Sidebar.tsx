@@ -1,6 +1,6 @@
 interface SidebarProps {
-  activeTab: "product" | "productSet" | "mdpick";
-  setActiveTab: (tab: "product" | "productSet" | "mdpick") => void;
+  activeTab: "product" | "productSet" | "mdpick" | "brand";
+  setActiveTab: (tab: "product" | "productSet" | "mdpick" | "brand") => void;
 }
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
@@ -102,6 +102,38 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               </svg>
             </div>
             <span className="font-semibold">MD Pick 설정</span>
+          </button>
+
+          <button
+            className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all duration-300 ${
+              activeTab === "brand"
+                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg transform scale-105"
+                : "text-slate-700 hover:bg-indigo-50 hover:scale-105"
+            }`}
+            onClick={() => setActiveTab("brand")}
+          >
+            <div
+              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                activeTab === "brand" ? "bg-white/20" : "bg-indigo-100"
+              }`}
+            >
+              <svg
+                className={`w-5 h-5 ${
+                  activeTab === "brand" ? "text-white" : "text-indigo-600"
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
+                />
+              </svg>
+            </div>
+            <span className="font-semibold">브랜드 등록</span>
           </button>
         </div>
       </div>
