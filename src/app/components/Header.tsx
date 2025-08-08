@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  Building,
-  Settings,
-  User,
-  LogOut,
-  Shield,
-  Activity,
-} from "lucide-react";
+import { Building, LogOut, Shield, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
