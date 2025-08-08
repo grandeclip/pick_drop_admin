@@ -4,7 +4,7 @@ import { Building, LogOut, Shield, Activity } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,13 +15,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogDescription, 
-  DialogFooter, 
-  DialogHeader, 
-  DialogTitle 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 
 export default function Header() {
@@ -137,6 +137,10 @@ export default function Header() {
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                 <Avatar className="h-9 w-9">
+                  <AvatarImage
+                    src={session?.user?.image || ""}
+                    alt={userName || "User"}
+                  />
                   <AvatarFallback className="bg-gradient-to-br from-indigo-100 to-purple-100 text-indigo-600 font-semibold">
                     {userInitials}
                   </AvatarFallback>
@@ -159,7 +163,7 @@ export default function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-slate-200" />
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 className="text-red-600 hover:bg-red-50 focus:bg-red-50 hover:text-red-700 focus:text-red-700 mx-2 rounded-md my-1"
                 onClick={handleLogoutClick}
               >
@@ -192,18 +196,19 @@ export default function Header() {
               <span>로그아웃 확인</span>
             </DialogTitle>
             <DialogDescription>
-              정말로 로그아웃하시겠습니까? 현재 작업중인 내용이 있다면 저장해주세요.
+              정말로 로그아웃하시겠습니까? 현재 작업중인 내용이 있다면
+              저장해주세요.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               onClick={() => setIsLogoutDialogOpen(false)}
             >
               취소
             </Button>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={confirmLogout}
               className="bg-red-600 hover:bg-red-700"
             >
