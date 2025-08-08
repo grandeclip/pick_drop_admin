@@ -7,6 +7,7 @@ import ProductForm from "../components/ProductForm";
 import ProductSetForm from "../components/ProductSetForm";
 import MDPickForm from "../components/MDPickForm";
 import BrandForm from "../components/BrandForm";
+import ProductManagement from "../components/ProductManagement";
 import { supabase } from "../lib/supabase";
 
 function parseLinks(rawInput: string): string[] {
@@ -20,8 +21,8 @@ function parseLinks(rawInput: string): string[] {
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "product" | "productSet" | "mdpick" | "brand"
-  >("product");
+    "product" | "productSet" | "mdpick" | "brand" | "productManage"
+  >("productManage");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -222,9 +223,11 @@ export default function Home() {
                 />
               ) : activeTab === "mdpick" ? (
                 <MDPickForm />
-              ) : (
+              ) : activeTab === "brand" ? (
                 <BrandForm />
-              )}
+              ) : activeTab === "productManage" ? (
+                <ProductManagement />
+              ) : null}
             </div>
           </div>
         </div>

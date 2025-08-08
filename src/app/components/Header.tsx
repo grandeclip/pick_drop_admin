@@ -13,12 +13,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
+import { useState } from "react";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
+} from "@/components/ui/dialog";
 
 export default function Header() {
   const { data: session } = useSession();
   const env = process.env.NODE_ENV;
   const isDev = env === "development";
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
   // 사용자 이메일에서 첫 글자 추출
   const getInitials = (
@@ -58,6 +68,24 @@ export default function Header() {
   const userInitials = getInitials(session?.user?.email, session?.user?.name);
   const userEmail = session?.user?.email || "unknown@pickdrop.com";
   const userName = session?.user?.name || "사용자";
+
+  // 로그아웃 확인 다이얼로그 열기
+  const handleLogoutClick = () => {
+    setIsLogoutDialogOpen(true);
+  };
+
+  // 실제 로그아웃 실행
+  const confirmLogout = async () => {
+    try {
+      setIsLogoutDialogOpen(false);
+      await signOut({
+        callbackUrl: "/signin",
+        redirect: true,
+      });
+    } catch (error) {
+      console.error("로그아웃 중 오류:", error);
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -131,7 +159,10 @@ export default function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator className="bg-slate-200" />
-              <DropdownMenuItem className="text-red-600 hover:bg-red-50 focus:bg-red-50 hover:text-red-700 focus:text-red-700 mx-2 rounded-md my-1">
+              <DropdownMenuItem 
+                className="text-red-600 hover:bg-red-50 focus:bg-red-50 hover:text-red-700 focus:text-red-700 mx-2 rounded-md my-1"
+                onClick={handleLogoutClick}
+              >
                 <LogOut className="mr-2 h-4 w-4" />
                 <span>로그아웃</span>
               </DropdownMenuItem>
@@ -151,6 +182,37 @@ export default function Header() {
           </div>
         </div>
       )}
+
+      {/* 로그아웃 확인 다이얼로그 */}
+      <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <LogOut className="w-5 h-5 text-red-600" />
+              <span>로그아웃 확인</span>
+            </DialogTitle>
+            <DialogDescription>
+              정말로 로그아웃하시겠습니까? 현재 작업중인 내용이 있다면 저장해주세요.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsLogoutDialogOpen(false)}
+            >
+              취소
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={confirmLogout}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              로그아웃
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 }
