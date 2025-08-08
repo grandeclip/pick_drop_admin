@@ -1,5 +1,11 @@
 import { useRef, useState } from "react";
 import { supabase } from "../lib/supabase";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Package, Tag, Image, FileText, Check, Loader2 } from "lucide-react";
 
 interface Brand {
   brand_id: string;
@@ -126,52 +132,30 @@ export default function ProductForm({
 
   return (
     <div>
-      <div className="flex items-center space-x-4 mb-8">
-        <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-2xl flex items-center justify-center">
-          <svg
-            className="w-6 h-6 text-white"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-            />
-          </svg>
-        </div>
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800">상품 등록</h2>
-          <p className="text-slate-600">새로운 상품을 시스템에 등록해보세요</p>
-        </div>
-      </div>
+      <Card className="border-0 shadow-none">
+        <CardHeader className="px-0">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-teal-600 rounded-2xl flex items-center justify-center">
+              <Package className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-2xl">상품 등록</CardTitle>
+              <CardDescription>새로운 상품을 시스템에 등록해보세요</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="px-0">
 
       <form onSubmit={handleFormSubmit} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-slate-700 font-semibold flex items-center space-x-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                  />
-                </svg>
-                <span>상품 이름</span>
-              </span>
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="product-name" className="flex items-center space-x-2">
+              <Tag className="w-4 h-4" />
+              <span>상품 이름</span>
+            </Label>
+            <Input
+              id="product-name"
               type="text"
-              className="input input-bordered w-full bg-white/50 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-2xl h-14 text-slate-700"
               value={productData.name}
               onChange={(e) =>
                 setProductData((prev) => ({
@@ -184,17 +168,12 @@ export default function ProductForm({
             />
           </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-slate-700 font-semibold">
-                브랜드
-              </span>
-            </label>
-            <input
+          <div className="space-y-2">
+            <Label htmlFor="brand-search">브랜드</Label>
+            <Input
+              id="brand-search"
               type="text"
-              className={`input input-bordered w-full bg-white/50 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-2xl h-14 text-slate-700 ${
-                brandError ? "border-red-300" : ""
-              }`}
+              className={brandError ? "border-destructive" : ""}
               value={brandSearchValue}
               onChange={(e) => {
                 const value = e.target.value.normalize("NFC");
@@ -208,59 +187,62 @@ export default function ProductForm({
 
             {/* 선택된 브랜드 표시 */}
             {selectedBrand && (
-              <div className="mt-2 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+              <div className="mt-2 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2 text-emerald-700">
+                    <Check className="w-4 h-4" />
                     <span className="text-sm font-medium">
                       선택된 브랜드: {selectedBrand.name}
                     </span>
                   </div>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={() => {
                       setSelectedBrand(null);
                       setBrandSearchValue("");
                       setProductData((prev) => ({ ...prev, brand_id: "" }));
                     }}
-                    className="text-emerald-500 hover:text-emerald-700 text-sm"
+                    className="text-emerald-500 hover:text-emerald-700 h-auto p-0"
                   >
                     선택 해제
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
 
             {/* 에러 메시지 */}
             {brandError && (
-              <div className="mt-2 p-3 bg-red-50 rounded-xl border border-red-200">
-                <p className="text-red-700 text-sm">{brandError}</p>
+              <div className="mt-2 p-3 bg-destructive/10 rounded-lg border border-destructive/20">
+                <p className="text-destructive text-sm">{brandError}</p>
               </div>
             )}
 
             {/* 브랜드 목록 */}
-            <div className="mt-4 bg-white rounded-2xl border border-slate-200 shadow-sm">
-              <div className="p-4 border-b border-slate-200">
-                <h4 className="text-sm font-semibold text-slate-800">
+            <Card className="mt-4">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">
                   브랜드 목록{" "}
                   {brandSearchResults.length > 0 &&
                     `(${brandSearchResults.length}개)`}
-                </h4>
-              </div>
-              <div className="p-4">
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
                 {isSearchingBrands ? (
                   <div className="text-center py-8">
-                    <div className="loading loading-spinner loading-md text-indigo-600 mb-4"></div>
-                    <p className="text-slate-500">검색 중입니다...</p>
+                    <Loader2 className="w-8 h-8 animate-spin text-primary mx-auto mb-4" />
+                    <p className="text-muted-foreground">검색 중입니다...</p>
                   </div>
                 ) : brandSearchResults.length === 0 ? (
                   <div className="text-center py-8">
-                    <p className="text-slate-500 text-sm mb-2">
+                    <p className="text-muted-foreground text-sm mb-2">
                       {brandSearchValue
                         ? "검색 결과가 없습니다"
                         : "브랜드명을 검색해주세요"}
                     </p>
                     {brandSearchValue && (
-                      <p className="text-slate-400 text-xs">
+                      <p className="text-muted-foreground/70 text-xs">
                         다른 브랜드명으로 검색해보세요
                       </p>
                     )}
@@ -271,18 +253,18 @@ export default function ProductForm({
                       <div
                         key={brand.brand_id}
                         onClick={() => handleBrandSelect(brand)}
-                        className={`p-3 border rounded-xl cursor-pointer transition-all duration-200 hover:bg-slate-50 ${
+                        className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 hover:bg-accent ${
                           selectedBrand?.brand_id === brand.brand_id
-                            ? "border-indigo-300 bg-indigo-50"
-                            : "border-slate-200"
+                            ? "border-primary bg-primary/10"
+                            : "border-border"
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium text-slate-800">
+                          <span className="font-medium">
                             {brand.name}
                           </span>
                           {selectedBrand?.brand_id === brand.brand_id && (
-                            <span className="text-indigo-600 text-sm">
+                            <span className="text-primary text-sm">
                               선택됨
                             </span>
                           )}
@@ -291,53 +273,29 @@ export default function ProductForm({
                     ))}
                   </div>
                 )}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           </div>
 
-          <div className="form-control">
-            <label className="label">
-              <span className="label-text text-slate-700 font-semibold flex items-center space-x-2">
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                  />
-                </svg>
-                <span>상품 이미지</span>
-              </span>
-            </label>
+          <div className="space-y-2">
+            <Label htmlFor="product-image" className="flex items-center space-x-2">
+              <Image className="w-4 h-4" />
+              <span>상품 이미지</span>
+            </Label>
             <div className="relative">
-              <input
+              <Input
+                id="product-image"
                 type="file"
-                className="file-input file-input-bordered w-full bg-white/50 border-slate-200 focus:border-indigo-500 rounded-2xl h-14"
+                ref={fileInputRef}
                 accept="image/*"
                 onChange={handleImageUpload}
                 required
+                className="cursor-pointer"
               />
               {productData.imageName && (
-                <div className="mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200">
+                <div className="mt-3 p-3 bg-emerald-50 rounded-lg border border-emerald-200">
                   <div className="flex items-center space-x-2 text-emerald-700">
-                    <svg
-                      className="w-4 h-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                      />
-                    </svg>
+                    <Check className="w-4 h-4" />
                     <span className="text-sm font-medium">
                       선택된 파일: {productData.imageName}
                     </span>
@@ -348,27 +306,13 @@ export default function ProductForm({
           </div>
         </div>
 
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text text-slate-700 font-semibold flex items-center space-x-2">
-              <svg
-                className="w-4 h-4"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
-              </svg>
-              <span>상품 설명</span>
-            </span>
-          </label>
-          <textarea
-            className="textarea textarea-bordered w-full bg-white/50 border-slate-200 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 rounded-2xl min-h-32 text-slate-700"
+        <div className="space-y-2">
+          <Label htmlFor="product-description" className="flex items-center space-x-2">
+            <FileText className="w-4 h-4" />
+            <span>상품 설명</span>
+          </Label>
+          <Textarea
+            id="product-description"
             value={productData.description}
             onChange={(e) =>
               setProductData((prev) => ({
@@ -379,18 +323,22 @@ export default function ProductForm({
             placeholder="상품에 대한 자세한 설명을 입력하세요..."
             rows={5}
             required
+            className="min-h-[128px]"
           />
         </div>
 
-        <div className="form-control mt-8">
-          <button
+        <div className="mt-8">
+          <Button
             type="submit"
-            className="btn bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-none hover:from-emerald-600 hover:to-teal-700 rounded-2xl h-14 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 p-4"
+            size="lg"
+            className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white"
           >
             상품 등록하기
-          </button>
+          </Button>
         </div>
       </form>
+        </CardContent>
+      </Card>
     </div>
   );
 }

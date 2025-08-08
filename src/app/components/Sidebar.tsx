@@ -1,142 +1,148 @@
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Package, Archive, Star, Tag, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 interface SidebarProps {
   activeTab: "product" | "productSet" | "mdpick" | "brand";
   setActiveTab: (tab: "product" | "productSet" | "mdpick" | "brand") => void;
 }
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
+  const tabs = [
+    {
+      id: "product" as const,
+      label: "상품 등록",
+      description: "새로운 상품을 시스템에 추가",
+      icon: Package,
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-50",
+      iconBg: "bg-blue-500",
+    },
+    {
+      id: "productSet" as const,
+      label: "상품세트 등록",
+      description: "여러 상품을 묶어서 세트로 구성",
+      icon: Archive,
+      color: "from-emerald-500 to-emerald-600",
+      bgColor: "bg-emerald-50",
+      iconBg: "bg-emerald-500",
+    },
+    {
+      id: "mdpick" as const,
+      label: "MD Pick 설정",
+      description: "추천 상품을 선별하여 설정",
+      icon: Star,
+      color: "from-amber-500 to-amber-600",
+      bgColor: "bg-amber-50",
+      iconBg: "bg-amber-500",
+    },
+    {
+      id: "brand" as const,
+      label: "브랜드 등록",
+      description: "새로운 브랜드 정보를 추가",
+      icon: Tag,
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-50",
+      iconBg: "bg-purple-500",
+    },
+  ];
+
   return (
     <div className="lg:col-span-1">
-      <div className="bg-white/80 backdrop-blur-sm rounded-3xl shadow-xl border border-white/20 p-6 sticky top-32">
-        <div className="space-y-3">
-          <button
-            className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all duration-300 ${
-              activeTab === "product"
-                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg transform scale-105"
-                : "text-slate-700 hover:bg-indigo-50 hover:scale-105"
-            }`}
-            onClick={() => setActiveTab("product")}
-          >
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                activeTab === "product" ? "bg-white/20" : "bg-indigo-100"
-              }`}
-            >
-              <svg
-                className={`w-5 h-5 ${
-                  activeTab === "product" ? "text-white" : "text-indigo-600"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"
-                />
-              </svg>
+      <Card className="overflow-hidden sticky top-32">
+        <CardHeader className="pb-4">
+          <div className="flex items-center space-x-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <Package className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold">상품 등록</span>
-          </button>
+            <div>
+              <h3 className="font-semibold text-foreground">관리 메뉴</h3>
+              <p className="text-xs text-muted-foreground">시스템 관리 도구</p>
+            </div>
+          </div>
+        </CardHeader>
 
-          <button
-            className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all duration-300 ${
-              activeTab === "productSet"
-                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg transform scale-105"
-                : "text-slate-700 hover:bg-indigo-50 hover:scale-105"
-            }`}
-            onClick={() => setActiveTab("productSet")}
-          >
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                activeTab === "productSet" ? "bg-white/20" : "bg-indigo-100"
-              }`}
-            >
-              <svg
-                className={`w-5 h-5 ${
-                  activeTab === "productSet" ? "text-white" : "text-indigo-600"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-                />
-              </svg>
-            </div>
-            <span className="font-semibold">상품세트 등록</span>
-          </button>
+        <CardContent className="space-y-2 p-4 pt-0">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = activeTab === tab.id;
 
-          <button
-            className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all duration-300 ${
-              activeTab === "mdpick"
-                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg transform scale-105"
-                : "text-slate-700 hover:bg-indigo-50 hover:scale-105"
-            }`}
-            onClick={() => setActiveTab("mdpick")}
-          >
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                activeTab === "mdpick" ? "bg-white/20" : "bg-indigo-100"
-              }`}
-            >
-              <svg
-                className={`w-5 h-5 ${
-                  activeTab === "mdpick" ? "text-white" : "text-indigo-600"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+            return (
+              <div
+                key={tab.id}
+                className={cn(
+                  "group relative overflow-hidden rounded-xl border transition-all duration-200",
+                  isActive
+                    ? "border-primary bg-primary/5 shadow-sm"
+                    : "border-border/50 hover:border-border hover:bg-accent/50"
+                )}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
-                />
-              </svg>
-            </div>
-            <span className="font-semibold">MD Pick 설정</span>
-          </button>
+                <Button
+                  variant="ghost"
+                  className={cn(
+                    "w-full h-auto p-0 justify-start rounded-xl",
+                    "hover:bg-transparent"
+                  )}
+                  onClick={() => setActiveTab(tab.id)}
+                >
+                  <div className="flex items-center w-full p-4">
+                    <div className="flex items-center space-x-3 flex-1">
+                      <div
+                        className={cn(
+                          "w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200",
+                          isActive
+                            ? `bg-gradient-to-br ${tab.color} shadow-sm`
+                            : "bg-muted group-hover:bg-muted/80"
+                        )}
+                      >
+                        <Icon
+                          className={cn(
+                            "w-5 h-5 transition-colors duration-200",
+                            isActive
+                              ? "text-white"
+                              : "text-muted-foreground group-hover:text-foreground"
+                          )}
+                        />
+                      </div>
 
-          <button
-            className={`w-full flex items-center space-x-4 p-4 rounded-2xl transition-all duration-300 ${
-              activeTab === "brand"
-                ? "bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg transform scale-105"
-                : "text-slate-700 hover:bg-indigo-50 hover:scale-105"
-            }`}
-            onClick={() => setActiveTab("brand")}
-          >
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                activeTab === "brand" ? "bg-white/20" : "bg-indigo-100"
-              }`}
-            >
-              <svg
-                className={`w-5 h-5 ${
-                  activeTab === "brand" ? "text-white" : "text-indigo-600"
-                }`}
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z"
-                />
-              </svg>
-            </div>
-            <span className="font-semibold">브랜드 등록</span>
-          </button>
-        </div>
-      </div>
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center space-x-2">
+                          <span
+                            className={cn(
+                              "font-medium text-sm transition-colors duration-200",
+                              isActive ? "text-primary" : "text-foreground"
+                            )}
+                          >
+                            {tab.label}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {tab.description}
+                        </p>
+                      </div>
+                    </div>
+
+                    <ChevronRight
+                      className={cn(
+                        "w-4 h-4 transition-all duration-200",
+                        isActive
+                          ? "text-primary translate-x-0.5"
+                          : "text-muted-foreground group-hover:text-foreground group-hover:translate-x-0.5"
+                      )}
+                    />
+                  </div>
+                </Button>
+
+                {/* Active indicator */}
+                {isActive && (
+                  <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary to-primary/60 rounded-r-full" />
+                )}
+              </div>
+            );
+          })}
+        </CardContent>
+      </Card>
     </div>
   );
 }
