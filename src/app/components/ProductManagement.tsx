@@ -39,6 +39,7 @@ import {
   Download,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { STATIC_URL } from "../lib/constants";
 
 interface Product {
   id: string;
@@ -331,7 +332,7 @@ export default function ProductManagement() {
                   <TableHead>브랜드</TableHead>
                   <TableHead>설명</TableHead>
                   <TableHead>등록일</TableHead>
-                  <TableHead className="text-right">작업</TableHead>
+                  <TableHead className="text-center">액션</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -341,7 +342,7 @@ export default function ProductManagement() {
                       <div className="flex items-center space-x-3">
                         {product.image_url ? (
                           <img
-                            src={product.image_url}
+                            src={`${STATIC_URL}${product.image_url}`}
                             alt={product.name}
                             className="w-10 h-10 rounded-lg object-cover"
                           />

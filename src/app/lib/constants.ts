@@ -1,0 +1,1 @@
+export const STATIC_URL = process.env.NEXT_PUBLIC_SUPABASE_STORAGE_URL;
