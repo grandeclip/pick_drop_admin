@@ -13,13 +13,13 @@ interface SidebarProps {
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const tabs = [
     {
-      id: "productManage" as const,
-      label: "상품 관리",
-      description: "등록된 상품을 조회하고 관리",
-      icon: List,
-      color: "from-slate-500 to-slate-600",
-      bgColor: "bg-slate-50",
-      iconBg: "bg-slate-500",
+      id: "brand" as const,
+      label: "브랜드 등록",
+      description: "새로운 브랜드 정보를 추가",
+      icon: Tag,
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-50",
+      iconBg: "bg-purple-500",
     },
     {
       id: "product" as const,
@@ -49,13 +49,13 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       iconBg: "bg-amber-500",
     },
     {
-      id: "brand" as const,
-      label: "브랜드 등록",
-      description: "새로운 브랜드 정보를 추가",
-      icon: Tag,
-      color: "from-purple-500 to-purple-600",
-      bgColor: "bg-purple-50",
-      iconBg: "bg-purple-500",
+      id: "productManage" as const,
+      label: "상품 관리",
+      description: "등록된 상품을 조회하고 관리",
+      icon: List,
+      color: "from-slate-500 to-slate-600",
+      bgColor: "bg-slate-50",
+      iconBg: "bg-slate-500",
     },
   ];
 

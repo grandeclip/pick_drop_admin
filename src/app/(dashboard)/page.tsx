@@ -22,7 +22,7 @@ export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<
     "product" | "productSet" | "mdpick" | "brand" | "productManage"
-  >("productManage");
+  >("brand");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
