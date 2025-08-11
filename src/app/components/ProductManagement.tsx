@@ -1,8 +1,18 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
 import { getLocalStorage, setLocalStorage } from "../lib/localStorage";
+import { formatNumber } from "../lib/formatters";
+import { 
+  fetchProducts, 
+  fetchBrands, 
+  updateProduct, 
+  deleteProduct,
+  type Product,
+  type Brand,
+  type SortField,
+  type SortDirection
+} from "../services/productService";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -36,27 +46,15 @@ import {
   Edit3,
   Trash2,
   Package,
-  RefreshCw,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { STATIC_URL } from "../lib/constants";
-
-interface Product {
-  id: string;
-  name: string;
-  description: string;
-  image_url?: string;
-  brand_id: string;
-  created_at: string;
-  brands?: {
-    name: string;
-  };
-}
-
-interface Brand {
-  brand_id: string;
-  name: string;
-}
+import ProductDetail from "./ProductDetail";
 
 export default function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -65,6 +63,8 @@ export default function ProductManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [isLoading, setIsLoading] = useState(true);
+  const [sortField, setSortField] = useState<SortField>('created_at');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -72,6 +72,9 @@ export default function ProductManagement() {
   const [itemsPerPage, setItemsPerPage] = useState(() => 
     getLocalStorage('productManagement_itemsPerPage', 20)
   );
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [currentView, setCurrentView] = useState<'list' | 'detail'>('list');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const { toast } = useToast();
 
   // 데이터 로딩
@@ -80,9 +83,16 @@ export default function ProductManagement() {
     loadBrands();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 검색 및 필터링
+  // 정렬 변경 시 데이터 다시 로드
   useEffect(() => {
-    let filtered = products;
+    if (products.length > 0) {
+      loadProducts(currentPage);
+    }
+  }, [sortField, sortDirection]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 검색 및 필터링 (정렬은 서버에서 처리)
+  useEffect(() => {
+    let filtered = [...products];
 
     // 검색어 필터링
     if (searchQuery) {
@@ -107,83 +117,32 @@ export default function ProductManagement() {
   }, [products, searchQuery, selectedBrand]);
 
   const loadProducts = async (page = 1, perPage = itemsPerPage) => {
-    try {
-      setIsLoading(true);
-      const from = (page - 1) * perPage;
-      const to = from + perPage - 1;
-
-      // 전체 개수 조회
-      const { count } = await supabase
-        .from("products")
-        .select("*", { count: "exact", head: true });
-
-      setTotalCount(count || 0);
-
-      // 병렬로 products와 brands 데이터 가져오기
-      const [productsResult, brandsResult] = await Promise.all([
-        supabase
-          .from("products")
-          .select(
-            "product_id, name, description, image_url, brand_id, created_at, updated_at"
-          )
-          .order("created_at", { ascending: false })
-          .range(from, to),
-        supabase.from("brands").select("brand_id, name"),
-      ]);
-
-      if (productsResult.error) {
-        console.error("Products error:", productsResult.error);
-        throw productsResult.error;
-      }
-
-      if (brandsResult.error) {
-        console.error("Brands error:", brandsResult.error);
-        throw brandsResult.error;
-      }
-
-      // 브랜드 맵 생성
-      const brandsMap = new Map(
-        brandsResult.data?.map((brand) => [brand.brand_id, brand]) || []
-      );
-
-      // products와 brands 데이터 결합 및 product_id -> id 매핑
-      const productsWithBrands =
-        productsResult.data?.map((product) => ({
-          ...product,
-          id: product.product_id, // product_id를 id로 매핑
-          brands:
-            product.brand_id && brandsMap.get(product.brand_id)
-              ? { name: brandsMap.get(product.brand_id)?.name }
-              : undefined,
-        })) || [];
-
-      setProducts(productsWithBrands);
-      setCurrentPage(page);
-    } catch (error) {
-      console.error("상품 로딩 에러:", error);
+    setIsLoading(true);
+    const response = await fetchProducts({ 
+      page, 
+      perPage,
+      sortField,
+      sortDirection
+    });
+    
+    if (response.error) {
       toast({
         title: "오류",
-        description: "상품 목록을 불러오는 중 오류가 발생했습니다.",
+        description: response.error,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+    } else {
+      setProducts(response.products);
+      setTotalCount(response.totalCount);
+      setCurrentPage(page);
     }
+    
+    setIsLoading(false);
   };
 
   const loadBrands = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("*")
-        .neq("name", "")
-        .order("name");
-
-      if (error) throw error;
-      setBrands(data || []);
-    } catch (error) {
-      console.error("브랜드 로딩 에러:", error);
-    }
+    const data = await fetchBrands();
+    setBrands(data);
   };
 
   const handleEdit = (product: Product) => {
@@ -191,34 +150,35 @@ export default function ProductManagement() {
     setIsEditDialogOpen(true);
   };
 
+  const handleViewDetail = (productId: string) => {
+    setSelectedProductId(productId);
+    setCurrentView('detail');
+  };
+
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setSelectedProductId(null);
+    // 목록 새로고침
+    loadProducts(currentPage);
+  };
+
   const handleUpdate = async () => {
     if (!editingProduct) return;
 
-    try {
-      const { error } = await supabase
-        .from("products")
-        .update({
-          name: editingProduct.name,
-          description: editingProduct.description,
-          brand_id: editingProduct.brand_id,
-        })
-        .eq("id", editingProduct.id);
-
-      if (error) throw error;
-
+    const result = await updateProduct(editingProduct);
+    
+    if (result.success) {
       toast({
         title: "성공",
         description: "상품이 성공적으로 수정되었습니다.",
       });
-
       setIsEditDialogOpen(false);
       setEditingProduct(null);
       loadProducts(currentPage);
-    } catch (error) {
-      console.error("상품 수정 에러:", error);
+    } else {
       toast({
         title: "오류",
-        description: "상품 수정 중 오류가 발생했습니다.",
+        description: result.error,
         variant: "destructive",
       });
     }
@@ -227,25 +187,18 @@ export default function ProductManagement() {
   const handleDelete = async (productId: string) => {
     if (!confirm("정말로 이 상품을 삭제하시겠습니까?")) return;
 
-    try {
-      const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("id", productId);
-
-      if (error) throw error;
-
+    const result = await deleteProduct(productId);
+    
+    if (result.success) {
       toast({
         title: "성공",
         description: "상품이 성공적으로 삭제되었습니다.",
       });
-
       loadProducts(currentPage);
-    } catch (error) {
-      console.error("상품 삭제 에러:", error);
+    } else {
       toast({
         title: "오류",
-        description: "상품 삭제 중 오류가 발생했습니다.",
+        description: result.error,
         variant: "destructive",
       });
     }
@@ -269,6 +222,54 @@ export default function ProductManagement() {
     setLocalStorage('productManagement_itemsPerPage', newPerPage);
     loadProducts(1, newPerPage);
   };
+
+  // 정렬 핸들러
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  // 정렬 아이콘 표시
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-4 h-4 text-muted-foreground" />;
+    }
+    return sortDirection === 'asc' ? 
+      <ArrowUp className="w-4 h-4" /> : 
+      <ArrowDown className="w-4 h-4" />;
+  };
+
+  const copyToClipboard = async (productId: string) => {
+    try {
+      await navigator.clipboard.writeText(productId);
+      setCopiedId(productId);
+      toast({
+        title: "복사 완료",
+        description: "상품 ID가 클립보드에 복사되었습니다.",
+      });
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch (error) {
+      toast({
+        title: "오류",
+        description: "클립보드 복사에 실패했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // 상세 페이지 렌더링
+  if (currentView === 'detail' && selectedProductId) {
+    return (
+      <ProductDetail
+        productId={selectedProductId}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -315,14 +316,22 @@ export default function ProductManagement() {
                   </option>
                 ))}
               </select>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => loadProducts(currentPage)}
+              <select
+                value={`${sortField}-${sortDirection}`}
+                onChange={(e) => {
+                  const [field, direction] = e.target.value.split('-') as [SortField, SortDirection];
+                  setSortField(field);
+                  setSortDirection(direction);
+                }}
+                className="px-3 py-2 border border-input bg-background rounded-md text-sm"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                새로고침
-              </Button>
+                <option value="created_at-desc">등록일순 (최신)</option>
+                <option value="created_at-asc">등록일순 (오래된)</option>
+                <option value="name-asc">상품명순 (가나다)</option>
+                <option value="name-desc">상품명순 (역순)</option>
+                <option value="brand-asc">브랜드명순 (가나다)</option>
+                <option value="brand-desc">브랜드명순 (역순)</option>
+              </select>
             </div>
           </div>
         </CardContent>
@@ -333,8 +342,8 @@ export default function ProductManagement() {
         <div className="flex items-center justify-between px-6">
           <div className="flex items-center space-x-4">
             <div className="text-sm text-muted-foreground">
-              전체 {totalCount}개 중 {(currentPage - 1) * itemsPerPage + 1}-
-              {Math.min(currentPage * itemsPerPage, totalCount)}개 표시
+              전체 {formatNumber(totalCount)}개 중 {formatNumber((currentPage - 1) * itemsPerPage + 1)}-
+              {formatNumber(Math.min(currentPage * itemsPerPage, totalCount))}개 표시
             </div>
             <select
               value={itemsPerPage}
@@ -381,7 +390,7 @@ export default function ProductManagement() {
                       onClick={() => loadProducts(page)}
                       className="w-10"
                     >
-                      {page}
+                      {formatNumber(page)}
                     </Button>
                   </React.Fragment>
                 ))}
@@ -403,7 +412,7 @@ export default function ProductManagement() {
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
-              <RefreshCw className="w-8 h-8 animate-spin text-muted-foreground" />
+              <div className="w-8 h-8 border-4 border-muted-foreground border-t-transparent rounded-full animate-spin" />
             </div>
           ) : filteredProducts.length === 0 ? (
             <div className="text-center py-16">
@@ -419,16 +428,55 @@ export default function ProductManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>상품명</TableHead>
-                  <TableHead>브랜드</TableHead>
-                  <TableHead>설명</TableHead>
-                  <TableHead>등록일</TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 font-medium hover:bg-transparent"
+                      onClick={() => handleSort('name')}
+                    >
+                      상품명
+                      <span className="ml-1">{getSortIcon('name')}</span>
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 font-medium hover:bg-transparent"
+                      onClick={() => handleSort('brand')}
+                    >
+                      브랜드
+                      <span className="ml-1">{getSortIcon('brand')}</span>
+                    </Button>
+                  </TableHead>
+                  <TableHead>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-auto p-0 font-medium hover:bg-transparent"
+                      onClick={() => handleSort('created_at')}
+                    >
+                      등록일
+                      <span className="ml-1">{getSortIcon('created_at')}</span>
+                    </Button>
+                  </TableHead>
                   <TableHead className="text-center">액션</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredProducts.map((product) => (
-                  <TableRow key={product.id}>
+                  <TableRow 
+                    key={product.id}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={(e) => {
+                      // 버튼 클릭이 아닌 경우에만 상세 페이지로 이동
+                      const target = e.target as HTMLElement;
+                      if (!target.closest('button')) {
+                        handleViewDetail(product.id);
+                      }
+                    }}
+                  >
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-3">
                         {product.image_url ? (
@@ -450,11 +498,6 @@ export default function ProductManagement() {
                         {product.brands?.name || "브랜드 없음"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="max-w-xs">
-                      <p className="truncate text-muted-foreground">
-                        {product.description}
-                      </p>
-                    </TableCell>
                     <TableCell className="text-muted-foreground">
                       {formatDate(product.created_at)}
                     </TableCell>
@@ -463,15 +506,38 @@ export default function ProductManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleEdit(product)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(product.id);
+                          }}
+                          title="ID 복사"
+                        >
+                          {copiedId === product.id ? (
+                            <Check className="w-4 h-4 text-green-600" />
+                          ) : (
+                            <Copy className="w-4 h-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEdit(product);
+                          }}
+                          title="수정"
                         >
                           <Edit3 className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(product.id)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(product.id);
+                          }}
                           className="text-destructive hover:text-destructive"
+                          title="삭제"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -541,7 +607,7 @@ export default function ProductManagement() {
                           onClick={() => loadProducts(page)}
                           className="w-10"
                         >
-                          {page}
+                          {formatNumber(page)}
                         </Button>
                       </React.Fragment>
                     ))}
