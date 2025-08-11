@@ -15,7 +15,6 @@ interface SearchResult {
   platform_name: string;
   original_price: number;
   discount_price: number | null;
-  shipping_fee: number;
 }
 
 interface ProductSetWithPlatform {
@@ -109,9 +108,7 @@ export default function MDPickForm() {
 
       const { data: priceHistories, error: priceError } = await supabase
         .from("product_price_histories")
-        .select(
-          "product_set_id, original_price, discount_price, shipping_fee, recorded_at"
-        )
+        .select("product_set_id, original_price, discount_price, recorded_at")
         .in("product_set_id", productSetIds)
         .order("recorded_at", { ascending: false });
 
@@ -144,7 +141,6 @@ export default function MDPickForm() {
           platform_name: ps.platforms?.name || "",
           original_price: latestPrice?.original_price || 0,
           discount_price: latestPrice?.discount_price || null,
-          shipping_fee: latestPrice?.shipping_fee || 0,
         };
       });
 
@@ -347,12 +343,6 @@ export default function MDPickForm() {
                         </span>
                       </div>
                     )}
-                    <div>
-                      <span className="text-slate-500">배송비: </span>
-                      <span className="font-medium">
-                        {formatPrice(item.shipping_fee)}
-                      </span>
-                    </div>
                   </div>
                 </div>
               ))}
