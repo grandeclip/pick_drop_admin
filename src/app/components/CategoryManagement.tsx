@@ -145,7 +145,8 @@ export default function CategoryManagement() {
     setIsSubmitting(true);
     const result = await updateCategory(
       selectedCategory.id,
-      editCategoryName.trim()
+      editCategoryName.trim(),
+      editCategoryParentId
     );
 
     if (result.success) {
@@ -156,6 +157,7 @@ export default function CategoryManagement() {
       setIsEditDialogOpen(false);
       setSelectedCategory(null);
       setEditCategoryName("");
+      setEditCategoryParentId("");
       loadCategories();
     } else {
       toast({
@@ -196,6 +198,7 @@ export default function CategoryManagement() {
   const openEditDialog = (category: Category) => {
     setSelectedCategory(category);
     setEditCategoryName(category.name);
+    setEditCategoryParentId(category.parent_id || "");
     setIsEditDialogOpen(true);
   };
 

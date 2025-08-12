@@ -120,8 +120,9 @@ export async function createCategory(name: string, parent_id?: string) {
 export async function updateCategory(categoryId: string, name: string, parent_id?: string) {
   try {
     const updateData: { name: string; parent_id?: string | null } = { name };
+    // parent_id가 undefined가 아닌 경우에만 업데이트 (빈 문자열은 null로 변환)
     if (parent_id !== undefined) {
-      updateData.parent_id = parent_id || null;
+      updateData.parent_id = parent_id === "" ? null : parent_id;
     }
 
     const { error } = await supabase
