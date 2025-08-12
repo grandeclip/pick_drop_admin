@@ -9,9 +9,11 @@ export interface ProductSet {
   created_at: string;
   thumbnail?: string;
   label?: string;
-  platforms?: {
-    name: string;
-  } | { name: string }[];
+  platforms?:
+    | {
+        name: string;
+      }
+    | { name: string }[];
 }
 
 export interface Product {
@@ -50,7 +52,6 @@ export interface Brand {
   name: string;
 }
 
-
 export interface ProductsResponse {
   products: Product[];
   totalCount: number;
@@ -65,11 +66,14 @@ export interface FetchProductsParams {
   perPage: number;
   sortField?: SortField;
   sortDirection?: SortDirection;
+  brandId?: string;
+  categoryFilter?: "all" | "with" | "without";
+  categoryId?: string;
 }
 
 /**
  * 상품 목록을 가져옵니다.
- * 서버에서는 항상 created_at 순으로 정렬하고, 
+ * 서버에서는 항상 created_at 순으로 정렬하고,
  * name과 brand 정렬은 클라이언트에서 처리합니다.
  */
 export async function fetchProducts({
@@ -77,15 +81,54 @@ export async function fetchProducts({
   perPage,
   sortField = "created_at",
   sortDirection = "desc",
+  brandId,
+  categoryFilter = "all",
+  categoryId,
 }: FetchProductsParams): Promise<ProductsResponse> {
   try {
     const from = (page - 1) * perPage;
     const to = from + perPage - 1;
 
-    // 전체 개수 조회
-    const { count, error: countError } = await supabase
+    // 쿼리 빌더 시작
+    let countQuery = supabase
       .from("products")
       .select("*", { count: "exact", head: true });
+    let productsQuery = supabase
+      .from("products")
+      .select(
+        "product_id, name, description, image_url, brand_id, category_id, created_at, updated_at"
+      );
+
+    // 브랜드 필터 적용
+    if (brandId && brandId !== "all") {
+      countQuery = countQuery.eq("brand_id", brandId);
+      productsQuery = productsQuery.eq("brand_id", brandId);
+    }
+
+    if (categoryFilter === "with") {
+      // 카테고리가 있는 상품들
+      countQuery = countQuery.not("category_id", "is", null);
+      productsQuery = productsQuery.not("category_id", "is", null);
+
+      // 특정 카테고리 선택된 경우
+      if (categoryId && categoryId !== "all") {
+        countQuery = countQuery.eq("category_id", categoryId);
+        productsQuery = productsQuery.eq("category_id", categoryId);
+      }
+    } else if (categoryFilter === "without") {
+      // 카테고리가 없는 상품들
+      countQuery = countQuery.is("category_id", null);
+      productsQuery = productsQuery.is("category_id", null);
+    } else {
+      // categoryFilter가 "all"인 경우에도 특정 카테고리 선택 가능
+      if (categoryId && categoryId !== "all") {
+        countQuery = countQuery.eq("category_id", categoryId);
+        productsQuery = productsQuery.eq("category_id", categoryId);
+      }
+    }
+
+    // 전체 개수 조회
+    const { count, error: countError } = await countQuery;
 
     if (countError) {
       throw countError;
@@ -93,33 +136,25 @@ export async function fetchProducts({
 
     // 서버에서는 항상 created_at으로 정렬 (최신순)
     const orderField = "created_at";
-    const ascending = sortField === "created_at" ? sortDirection === "asc" : false;
+    const ascending =
+      sortField === "created_at" ? sortDirection === "asc" : false;
 
     // 병렬로 products, brands, categories, product_sets 데이터 가져오기
     const [productsResult, brandsResult, categoriesResult] = await Promise.all([
-      supabase
-        .from("products")
-        .select(
-          "product_id, name, description, image_url, brand_id, category_id, created_at, updated_at"
-        )
-        .order(orderField, { ascending })
-        .range(from, to),
+      productsQuery.order(orderField, { ascending }).range(from, to),
       supabase.from("brands").select("brand_id, name"),
       supabase.from("product_categories").select("id, name"),
     ]);
 
     if (productsResult.error) {
-      console.error("Products error:", productsResult.error);
       throw productsResult.error;
     }
 
     if (brandsResult.error) {
-      console.error("Brands error:", brandsResult.error);
       throw brandsResult.error;
     }
 
     if (categoriesResult.error) {
-      console.error("Categories error:", categoriesResult.error);
       throw categoriesResult.error;
     }
 
@@ -174,9 +209,10 @@ export async function fetchProducts({
           created_at: ps.created_at,
           thumbnail: ps.thumbnail,
           label: ps.label,
-          platforms: Array.isArray(ps.platforms) && ps.platforms.length > 0 
-            ? ps.platforms[0] 
-            : ps.platforms,
+          platforms:
+            Array.isArray(ps.platforms) && ps.platforms.length > 0
+              ? ps.platforms[0]
+              : ps.platforms,
         });
       });
     }
@@ -230,24 +266,27 @@ export async function fetchBrands(): Promise<Brand[]> {
   }
 }
 
-
 /**
  * 단일 상품을 조회합니다.
  */
-export async function fetchSingleProduct(productId: string): Promise<Product | null> {
+export async function fetchSingleProduct(
+  productId: string
+): Promise<Product | null> {
   try {
     // 병렬로 상품, 브랜드, 카테고리, product_sets 데이터 가져오기
-    const [productResult, brandsResult, categoriesResult, productSetsResult] = await Promise.all([
-      supabase
-        .from("products")
-        .select("*")
-        .eq("product_id", productId)
-        .single(),
-      supabase.from("brands").select("brand_id, name"),
-      supabase.from("product_categories").select("id, name"),
-      supabase
-        .from("product_sets")
-        .select(`
+    const [productResult, brandsResult, categoriesResult, productSetsResult] =
+      await Promise.all([
+        supabase
+          .from("products")
+          .select("*")
+          .eq("product_id", productId)
+          .single(),
+        supabase.from("brands").select("brand_id, name"),
+        supabase.from("product_categories").select("id, name"),
+        supabase
+          .from("product_sets")
+          .select(
+            `
           product_set_id,
           product_name,
           normalized_product_name,
@@ -256,9 +295,10 @@ export async function fetchSingleProduct(productId: string): Promise<Product | n
           thumbnail,
           label,
           platforms(name)
-        `)
-        .eq("product_id", productId),
-    ]);
+        `
+          )
+          .eq("product_id", productId),
+      ]);
 
     if (productResult.error) {
       console.error("Product error:", productResult.error);
@@ -288,35 +328,43 @@ export async function fetchSingleProduct(productId: string): Promise<Product | n
     );
 
     // product_sets 데이터 매핑
-    const productSets = productSetsResult.data?.map((ps) => ({
-      product_set_id: ps.product_set_id,
-      product_name: ps.product_name,
-      normalized_product_name: ps.normalized_product_name,
-      link_url: ps.link_url,
-      created_at: ps.created_at,
-      thumbnail: ps.thumbnail,
-      label: ps.label,
-      platforms: Array.isArray(ps.platforms) && ps.platforms.length > 0 
-        ? ps.platforms[0] 
-        : ps.platforms,
-    })) || [];
+    const productSets =
+      productSetsResult.data?.map((ps) => ({
+        product_set_id: ps.product_set_id,
+        product_name: ps.product_name,
+        normalized_product_name: ps.normalized_product_name,
+        link_url: ps.link_url,
+        created_at: ps.created_at,
+        thumbnail: ps.thumbnail,
+        label: ps.label,
+        platforms:
+          Array.isArray(ps.platforms) && ps.platforms.length > 0
+            ? ps.platforms[0]
+            : ps.platforms,
+      })) || [];
 
     // 카테고리 계층 구조 조회
     let categoryHierarchy = undefined;
     if (productResult.data.category_id) {
-      categoryHierarchy = await fetchCategoryHierarchy(productResult.data.category_id);
+      categoryHierarchy = await fetchCategoryHierarchy(
+        productResult.data.category_id
+      );
     }
 
     // 상품 데이터와 브랜드, 카테고리, product_sets 정보 결합
     const productWithBrand: Product = {
       ...productResult.data,
       id: productResult.data.product_id,
-      brands: productResult.data.brand_id && brandsMap.get(productResult.data.brand_id)
-        ? { name: brandsMap.get(productResult.data.brand_id)?.name }
-        : undefined,
-      categories: productResult.data.category_id && categoriesMap.get(productResult.data.category_id)
-        ? { name: categoriesMap.get(productResult.data.category_id)?.name }
-        : undefined,
+      brands:
+        productResult.data.brand_id &&
+        brandsMap.get(productResult.data.brand_id)
+          ? { name: brandsMap.get(productResult.data.brand_id)?.name }
+          : undefined,
+      categories:
+        productResult.data.category_id &&
+        categoriesMap.get(productResult.data.category_id)
+          ? { name: categoriesMap.get(productResult.data.category_id)?.name }
+          : undefined,
       categoryHierarchy: categoryHierarchy || undefined,
       product_sets: productSets,
     };
@@ -336,11 +384,13 @@ export async function updateProduct(
 ) {
   try {
     const updateData: Record<string, string | undefined> = {};
-    
+
     if (product.name !== undefined) updateData.name = product.name;
-    if (product.description !== undefined) updateData.description = product.description;
+    if (product.description !== undefined)
+      updateData.description = product.description;
     if (product.brand_id !== undefined) updateData.brand_id = product.brand_id;
-    if (product.category_id !== undefined) updateData.category_id = product.category_id;
+    if (product.category_id !== undefined)
+      updateData.category_id = product.category_id;
 
     const { error } = await supabase
       .from("products")
@@ -378,4 +428,3 @@ export async function deleteProduct(productId: string) {
     };
   }
 }
-

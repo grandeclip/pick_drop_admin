@@ -23,11 +23,11 @@ interface ProductFiltersProps {
   setSortField: (field: SortField) => void;
   sortDirection: SortDirection;
   setSortDirection: (direction: SortDirection) => void;
-  
+
   // 데이터
   brands: Brand[];
   categories: Category[];
-  
+
   // 내비게이션
   onNavigateToCategory?: () => void;
 }
@@ -49,12 +49,12 @@ export default function ProductFilters({
   categories,
   onNavigateToCategory,
 }: ProductFiltersProps) {
-  const handleCategoryFilterChange = (newFilter: "all" | "with" | "without") => {
+  const handleCategoryFilterChange = (
+    newFilter: "all" | "with" | "without"
+  ) => {
     setCategoryFilter(newFilter);
-    // 카테고리 필터가 "카테고리 있음"이 아닌 경우 특정 카테고리 선택 초기화
-    if (newFilter !== "with") {
-      setSelectedCategory("all");
-    }
+    // 카테고리 필터 변경 시 항상 특정 카테고리 선택을 초기화
+    setSelectedCategory("all");
   };
 
   const handleSortChange = (value: string) => {
@@ -106,7 +106,11 @@ export default function ProductFilters({
               </label>
               <select
                 value={categoryFilter}
-                onChange={(e) => handleCategoryFilterChange(e.target.value as "all" | "with" | "without")}
+                onChange={(e) =>
+                  handleCategoryFilterChange(
+                    e.target.value as "all" | "with" | "without"
+                  )
+                }
                 className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
               >
                 <option value="all">전체 상품</option>
@@ -172,53 +176,60 @@ export default function ProductFilters({
           </div>
 
           {/* 필터 상태 표시 */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-muted-foreground">적용된 필터:</span>
-            {selectedBrand !== "all" && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs">
-                브랜드: {brands.find(b => b.brand_id === selectedBrand)?.name}
-                <button
-                  onClick={() => setSelectedBrand("all")}
-                  className="hover:text-blue-900"
-                >
-                  ×
-                </button>
+          {(selectedBrand !== "all" ||
+            categoryFilter !== "all" ||
+            selectedCategory !== "all" ||
+            searchQuery) && (
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs text-muted-foreground">
+                적용된 필터:
               </span>
-            )}
-            {categoryFilter !== "all" && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs">
-                {categoryFilter === "with" ? "카테고리 있음" : "카테고리 없음"}
-                <button
-                  onClick={() => handleCategoryFilterChange("all")}
-                  className="hover:text-green-900"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {selectedCategory !== "all" && categoryFilter === "with" && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs">
-                카테고리: {categories.find(c => c.id === selectedCategory)?.name}
-                <button
-                  onClick={() => setSelectedCategory("all")}
-                  className="hover:text-purple-900"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-            {searchQuery && (
-              <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs">
-                검색: {searchQuery}
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="hover:text-gray-900"
-                >
-                  ×
-                </button>
-              </span>
-            )}
-          </div>
+              {selectedBrand !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-md text-xs">
+                  브랜드:{" "}
+                  {brands.find((b) => b.brand_id === selectedBrand)?.name}
+                  <button
+                    onClick={() => setSelectedBrand("all")}
+                    className="hover:text-blue-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {categoryFilter !== "all" && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded-md text-xs">
+                  {categoryFilter === "with"
+                    ? "카테고리 있음"
+                    : "카테고리 없음"}
+                  {selectedCategory !== "all" &&
+                    categoryFilter === "with" &&
+                    (() => {
+                      const foundCategory = categories.find(
+                        (c) => String(c.id) === String(selectedCategory)
+                      );
+                      return `: ${foundCategory?.name || "알 수 없음"}`;
+                    })()}
+                  <button
+                    onClick={() => handleCategoryFilterChange("all")}
+                    className="hover:text-green-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              {searchQuery && (
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-700 rounded-md text-xs">
+                  검색: {searchQuery}
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="hover:text-gray-900"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

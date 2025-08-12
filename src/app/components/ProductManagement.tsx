@@ -102,18 +102,18 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
     loadCategories();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // created_at 정렬 변경 시에만 서버에서 데이터 다시 로드
+  // 서버 쿼리가 필요한 필터나 정렬 변경 시 데이터 다시 로드
   useEffect(() => {
-    if (products.length > 0 && sortField === "created_at") {
-      loadProducts(currentPage);
+    if (products.length > 0) {
+      loadProducts(1); // 필터 변경시 첫 페이지로 이동
     }
-  }, [sortField, sortDirection]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [sortField, sortDirection, selectedBrand, categoryFilter, selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 검색, 필터링, 클라이언트 정렬
+  // 검색 및 클라이언트 정렬
   useEffect(() => {
     let filtered = [...products];
 
-    // 검색어 필터링
+    // 검색어 필터링 (클라이언트에서만 처리)
     if (searchQuery) {
       filtered = filtered.filter(
         (product) =>
@@ -122,34 +122,6 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
             .toLowerCase()
             .includes(searchQuery.toLowerCase()) ||
           product.brands?.name.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // 브랜드 필터링
-    if (selectedBrand !== "all") {
-      filtered = filtered.filter(
-        (product) => product.brand_id === selectedBrand
-      );
-    }
-
-    // 특정 카테고리 필터링
-    if (selectedCategory !== "all") {
-      filtered = filtered.filter(
-        (product) => product.category_id === selectedCategory
-      );
-    }
-
-    // 카테고리 유무 필터링
-    if (categoryFilter === "with") {
-      filtered = filtered.filter(
-        (product) => product.category_id && 
-                    typeof product.category_id === "string" && 
-                    product.category_id.trim() !== ""
-      );
-    } else if (categoryFilter === "without") {
-      filtered = filtered.filter(
-        (product) => !product.category_id || 
-                    (typeof product.category_id === "string" && product.category_id.trim() === "")
       );
     }
 
@@ -175,15 +147,12 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
         }
       });
     }
-    // created_at 정렬은 서버에서 이미 처리됨
+    // created_at 정렬과 브랜드/카테고리 필터링은 서버에서 이미 처리됨
 
     setFilteredProducts(filtered);
   }, [
     products,
     searchQuery,
-    selectedBrand,
-    selectedCategory,
-    categoryFilter,
     sortField,
     sortDirection,
   ]);
@@ -195,6 +164,9 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
       perPage,
       sortField,
       sortDirection,
+      brandId: selectedBrand,
+      categoryFilter,
+      categoryId: selectedCategory,
     });
 
     if (response.error) {
