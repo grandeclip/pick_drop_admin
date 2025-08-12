@@ -142,11 +142,14 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
     // 카테고리 유무 필터링
     if (categoryFilter === "with") {
       filtered = filtered.filter(
-        (product) => product.category_id && product.category_id.trim() !== ""
+        (product) => product.category_id && 
+                    typeof product.category_id === "string" && 
+                    product.category_id.trim() !== ""
       );
     } else if (categoryFilter === "without") {
       filtered = filtered.filter(
-        (product) => !product.category_id || product.category_id.trim() === ""
+        (product) => !product.category_id || 
+                    (typeof product.category_id === "string" && product.category_id.trim() === "")
       );
     }
 
