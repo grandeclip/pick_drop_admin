@@ -27,6 +27,7 @@ import {
   Building,
   Copy,
   Check,
+  Settings,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { STATIC_URL } from "../lib/constants";
@@ -41,11 +42,13 @@ type Product = ServiceProduct;
 interface ProductDetailProps {
   productId: string;
   onBack: () => void;
+  onNavigateToCategory?: () => void;
 }
 
 export default function ProductDetail({
   productId,
   onBack,
+  onNavigateToCategory,
 }: ProductDetailProps) {
   const [product, setProduct] = useState<Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -242,7 +245,20 @@ export default function ProductDetail({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="category">카테고리</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="category">카테고리</Label>
+                  {onNavigateToCategory && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onNavigateToCategory}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <Settings className="w-3 h-3 mr-1" />
+                      카테고리 관리
+                    </Button>
+                  )}
+                </div>
                 {product.categoryHierarchy ? (
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2">

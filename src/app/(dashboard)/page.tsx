@@ -25,6 +25,10 @@ export default function Home() {
     "product" | "productSet" | "mdpick" | "brand" | "productManage" | "categoryManage"
   >("brand");
 
+  const handleNavigateToCategory = () => {
+    setActiveTab("categoryManage");
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // 상품 등록 상태
@@ -227,7 +231,7 @@ export default function Home() {
               ) : activeTab === "brand" ? (
                 <BrandForm />
               ) : activeTab === "productManage" ? (
-                <ProductManagement />
+                <ProductManagement onNavigateToCategory={handleNavigateToCategory} />
               ) : activeTab === "categoryManage" ? (
                 <CategoryManagement />
               ) : null}

@@ -58,7 +58,11 @@ import ProductDetail from "./ProductDetail";
 import ProductFilters from "./ProductFilters";
 import Pagination from "./Pagination";
 
-export default function ProductManagement() {
+interface ProductManagementProps {
+  onNavigateToCategory?: () => void;
+}
+
+export default function ProductManagement({ onNavigateToCategory }: ProductManagementProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -358,7 +362,11 @@ export default function ProductManagement() {
   // 상세 페이지 렌더링
   if (currentView === "detail" && selectedProductId) {
     return (
-      <ProductDetail productId={selectedProductId} onBack={handleBackToList} />
+      <ProductDetail 
+        productId={selectedProductId} 
+        onBack={handleBackToList}
+        onNavigateToCategory={onNavigateToCategory}
+      />
     );
   }
 
@@ -397,6 +405,7 @@ export default function ProductManagement() {
         setSortDirection={setSortDirection}
         brands={brands}
         categories={categories}
+        onNavigateToCategory={onNavigateToCategory}
       />
 
       {/* 일괄 작업 도구 모음 */}

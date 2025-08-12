@@ -3,7 +3,8 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Settings } from "lucide-react";
 import type { Brand } from "../services/productService";
 import type { Category } from "../services/productCategoryService";
 import type { SortField, SortDirection } from "../services/productService";
@@ -26,6 +27,9 @@ interface ProductFiltersProps {
   // 데이터
   brands: Brand[];
   categories: Category[];
+  
+  // 내비게이션
+  onNavigateToCategory?: () => void;
 }
 
 export default function ProductFilters({
@@ -43,6 +47,7 @@ export default function ProductFilters({
   setSortDirection,
   brands,
   categories,
+  onNavigateToCategory,
 }: ProductFiltersProps) {
   const handleCategoryFilterChange = (newFilter: "all" | "with" | "without") => {
     setCategoryFilter(newFilter);
@@ -113,9 +118,22 @@ export default function ProductFilters({
             {/* 특정 카테고리 선택 (조건부 렌더링) */}
             {categoryFilter === "with" ? (
               <div className="space-y-1">
-                <label className="text-xs font-medium text-muted-foreground">
-                  카테고리 선택
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-muted-foreground">
+                    카테고리 선택
+                  </label>
+                  {onNavigateToCategory && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onNavigateToCategory}
+                      className="h-6 px-2 text-xs"
+                    >
+                      <Settings className="w-3 h-3 mr-1" />
+                      관리
+                    </Button>
+                  )}
+                </div>
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
