@@ -38,7 +38,6 @@ import {
 
 type Product = ServiceProduct;
 
-
 interface ProductDetailProps {
   productId: string;
   onBack: () => void;
@@ -74,7 +73,6 @@ export default function ProductDetail({
 
     setIsLoading(false);
   };
-
 
   const handleDelete = async () => {
     if (!product) return;
@@ -220,9 +218,7 @@ export default function ProductDetail({
           <Card>
             <CardHeader>
               <CardTitle>기본 정보</CardTitle>
-              <CardDescription>
-                상품의 기본 정보입니다
-              </CardDescription>
+              <CardDescription>상품의 기본 정보입니다</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -243,6 +239,38 @@ export default function ProductDetail({
                   <Building className="w-3 h-3 mr-1" />
                   {product.brands?.name || "브랜드 없음"}
                 </Badge>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="category">카테고리</Label>
+                {product.categoryHierarchy ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      {product.categoryHierarchy.path.map((category, index) => (
+                        <React.Fragment key={category.id}>
+                          {index > 0 && (
+                            <span className="text-muted-foreground">→</span>
+                          )}
+                          <Badge 
+                            variant={index === product.categoryHierarchy!.path.length - 1 ? "secondary" : "outline"} 
+                            className="text-xs"
+                          >
+                            <Package className="w-3 h-3 mr-1" />
+                            {category.name}
+                          </Badge>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      총 {product.categoryHierarchy.level + 1}단계 카테고리
+                    </div>
+                  </div>
+                ) : (
+                  <Badge variant="secondary" className="w-fit">
+                    <Package className="w-3 h-3 mr-1" />
+                    {product.categories?.name || "미분류"}
+                  </Badge>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -358,7 +386,7 @@ export default function ProductDetail({
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  연관된 상품 세트가 없습니다.
+                  연관된 기획 세트가 없습니다.
                 </div>
               )}
             </CardContent>

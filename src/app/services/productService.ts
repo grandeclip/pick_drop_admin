@@ -1,4 +1,5 @@
 import { supabase } from "../lib/supabase";
+import { fetchCategoryHierarchy } from "./productCategoryService";
 
 export interface ProductSet {
   product_set_id: string;
@@ -20,10 +21,26 @@ export interface Product {
   description: string;
   image_url?: string;
   brand_id: string;
+  category_id?: string;
   created_at: string;
   updated_at?: string;
   brands?: {
     name: string;
+  };
+  categories?: {
+    name: string;
+  };
+  categoryHierarchy?: {
+    id: string;
+    name: string;
+    parent_id?: string;
+    level: number;
+    path: Array<{
+      id: string;
+      name: string;
+      parent_id?: string;
+      level?: number;
+    }>;
   };
   product_sets?: ProductSet[];
 }
@@ -32,6 +49,7 @@ export interface Brand {
   brand_id: string;
   name: string;
 }
+
 
 export interface ProductsResponse {
   products: Product[];
@@ -75,16 +93,17 @@ export async function fetchProducts({
     const orderField = sortField === "brand" ? "created_at" : sortField;
     const ascending = sortField === "brand" ? false : sortDirection === "asc";
 
-    // 병렬로 products, brands, product_sets 데이터 가져오기
-    const [productsResult, brandsResult] = await Promise.all([
+    // 병렬로 products, brands, categories, product_sets 데이터 가져오기
+    const [productsResult, brandsResult, categoriesResult] = await Promise.all([
       supabase
         .from("products")
         .select(
-          "product_id, name, description, image_url, brand_id, created_at, updated_at"
+          "product_id, name, description, image_url, brand_id, category_id, created_at, updated_at"
         )
         .order(orderField, { ascending })
         .range(from, to),
       supabase.from("brands").select("brand_id, name"),
+      supabase.from("product_categories").select("id, name"),
     ]);
 
     if (productsResult.error) {
@@ -95,6 +114,11 @@ export async function fetchProducts({
     if (brandsResult.error) {
       console.error("Brands error:", brandsResult.error);
       throw brandsResult.error;
+    }
+
+    if (categoriesResult.error) {
+      console.error("Categories error:", categoriesResult.error);
+      throw categoriesResult.error;
     }
 
     // 가져온 상품들의 product_set 데이터도 가져오기
@@ -128,6 +152,11 @@ export async function fetchProducts({
       brandsResult.data?.map((brand) => [brand.brand_id, brand]) || []
     );
 
+    // 카테고리 맵 생성
+    const categoriesMap = new Map(
+      categoriesResult.data?.map((category) => [category.id, category]) || []
+    );
+
     // product_sets 맵 생성 (product_id 별로 그룹화)
     const productSetsMap = new Map<string, ProductSet[]>();
     if (productSetsResult.data) {
@@ -150,7 +179,7 @@ export async function fetchProducts({
       });
     }
 
-    // products, brands, product_sets 데이터 결합 및 product_id -> id 매핑
+    // products, brands, categories, product_sets 데이터 결합 및 product_id -> id 매핑
     const productsWithBrands =
       productsResult.data?.map((product) => ({
         ...product,
@@ -158,6 +187,10 @@ export async function fetchProducts({
         brands:
           product.brand_id && brandsMap.get(product.brand_id)
             ? { name: brandsMap.get(product.brand_id)?.name }
+            : undefined,
+        categories:
+          product.category_id && categoriesMap.get(product.category_id)
+            ? { name: categoriesMap.get(product.category_id)?.name }
             : undefined,
         product_sets: productSetsMap.get(product.product_id) || [],
       })) || [];
@@ -205,19 +238,21 @@ export async function fetchBrands(): Promise<Brand[]> {
   }
 }
 
+
 /**
  * 단일 상품을 조회합니다.
  */
 export async function fetchSingleProduct(productId: string): Promise<Product | null> {
   try {
-    // 병렬로 상품, 브랜드, product_sets 데이터 가져오기
-    const [productResult, brandsResult, productSetsResult] = await Promise.all([
+    // 병렬로 상품, 브랜드, 카테고리, product_sets 데이터 가져오기
+    const [productResult, brandsResult, categoriesResult, productSetsResult] = await Promise.all([
       supabase
         .from("products")
         .select("*")
         .eq("product_id", productId)
         .single(),
       supabase.from("brands").select("brand_id, name"),
+      supabase.from("product_categories").select("id, name"),
       supabase
         .from("product_sets")
         .select(`
@@ -242,6 +277,10 @@ export async function fetchSingleProduct(productId: string): Promise<Product | n
       console.error("Brands error:", brandsResult.error);
     }
 
+    if (categoriesResult.error) {
+      console.error("Categories error:", categoriesResult.error);
+    }
+
     if (productSetsResult.error) {
       console.error("Product sets error:", productSetsResult.error);
     }
@@ -249,6 +288,11 @@ export async function fetchSingleProduct(productId: string): Promise<Product | n
     // 브랜드 맵 생성
     const brandsMap = new Map(
       brandsResult.data?.map((brand) => [brand.brand_id, brand]) || []
+    );
+
+    // 카테고리 맵 생성
+    const categoriesMap = new Map(
+      categoriesResult.data?.map((category) => [category.id, category]) || []
     );
 
     // product_sets 데이터 매핑
@@ -265,13 +309,23 @@ export async function fetchSingleProduct(productId: string): Promise<Product | n
         : ps.platforms,
     })) || [];
 
-    // 상품 데이터와 브랜드, product_sets 정보 결합
+    // 카테고리 계층 구조 조회
+    let categoryHierarchy = undefined;
+    if (productResult.data.category_id) {
+      categoryHierarchy = await fetchCategoryHierarchy(productResult.data.category_id);
+    }
+
+    // 상품 데이터와 브랜드, 카테고리, product_sets 정보 결합
     const productWithBrand: Product = {
       ...productResult.data,
       id: productResult.data.product_id,
       brands: productResult.data.brand_id && brandsMap.get(productResult.data.brand_id)
         ? { name: brandsMap.get(productResult.data.brand_id)?.name }
         : undefined,
+      categories: productResult.data.category_id && categoriesMap.get(productResult.data.category_id)
+        ? { name: categoriesMap.get(productResult.data.category_id)?.name }
+        : undefined,
+      categoryHierarchy: categoryHierarchy || undefined,
       product_sets: productSets,
     };
 
@@ -329,3 +383,4 @@ export async function deleteProduct(productId: string) {
     };
   }
 }
+
