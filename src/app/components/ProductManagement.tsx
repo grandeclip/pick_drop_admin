@@ -491,7 +491,14 @@ export default function ProductManagement() {
                             <Package className="w-5 h-5 text-muted-foreground" />
                           </div>
                         )}
-                        <span>{product.name}</span>
+                        <div>
+                          <span>{product.name}</span>
+                          {product.product_sets && product.product_sets.length > 0 && (
+                            <div className="text-xs text-muted-foreground mt-1">
+                              상품세트 {product.product_sets.length}개
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>

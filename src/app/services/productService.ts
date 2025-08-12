@@ -1,5 +1,18 @@
 import { supabase } from "../lib/supabase";
 
+export interface ProductSet {
+  product_set_id: string;
+  product_name: string;
+  normalized_product_name: string;
+  link_url: string;
+  created_at: string;
+  thumbnail?: string;
+  label?: string;
+  platforms?: {
+    name: string;
+  } | { name: string }[];
+}
+
 export interface Product {
   id: string;
   product_id?: string;
@@ -12,6 +25,7 @@ export interface Product {
   brands?: {
     name: string;
   };
+  product_sets?: ProductSet[];
 }
 
 export interface Brand {
@@ -25,8 +39,8 @@ export interface ProductsResponse {
   error?: string;
 }
 
-export type SortField = 'created_at' | 'name' | 'brand';
-export type SortDirection = 'asc' | 'desc';
+export type SortField = "created_at" | "name" | "brand";
+export type SortDirection = "asc" | "desc";
 
 export interface FetchProductsParams {
   page: number;
@@ -38,11 +52,11 @@ export interface FetchProductsParams {
 /**
  * 상품 목록을 가져옵니다.
  */
-export async function fetchProducts({ 
-  page, 
-  perPage, 
-  sortField = 'created_at', 
-  sortDirection = 'desc' 
+export async function fetchProducts({
+  page,
+  perPage,
+  sortField = "created_at",
+  sortDirection = "desc",
 }: FetchProductsParams): Promise<ProductsResponse> {
   try {
     const from = (page - 1) * perPage;
@@ -58,10 +72,10 @@ export async function fetchProducts({
     }
 
     // 정렬 필드 매핑 (brand는 join 후 클라이언트에서 정렬)
-    const orderField = sortField === 'brand' ? 'created_at' : sortField;
-    const ascending = sortField === 'brand' ? false : sortDirection === 'asc';
+    const orderField = sortField === "brand" ? "created_at" : sortField;
+    const ascending = sortField === "brand" ? false : sortDirection === "asc";
 
-    // 병렬로 products와 brands 데이터 가져오기
+    // 병렬로 products, brands, product_sets 데이터 가져오기
     const [productsResult, brandsResult] = await Promise.all([
       supabase
         .from("products")
@@ -83,12 +97,60 @@ export async function fetchProducts({
       throw brandsResult.error;
     }
 
+    // 가져온 상품들의 product_set 데이터도 가져오기
+    const productIds = productsResult.data?.map((p) => p.product_id) || [];
+    const productSetsResult =
+      productIds.length > 0
+        ? await supabase
+            .from("product_sets")
+            .select(
+              `
+        product_set_id,
+        product_id,
+        product_name,
+        normalized_product_name,
+        link_url,
+        created_at,
+        thumbnail,
+        label,
+        platforms(name)
+      `
+            )
+            .in("product_id", productIds)
+        : { data: [], error: null };
+
+    if (productSetsResult.error) {
+      console.error("Product sets error:", productSetsResult.error);
+    }
+
     // 브랜드 맵 생성
     const brandsMap = new Map(
       brandsResult.data?.map((brand) => [brand.brand_id, brand]) || []
     );
 
-    // products와 brands 데이터 결합 및 product_id -> id 매핑
+    // product_sets 맵 생성 (product_id 별로 그룹화)
+    const productSetsMap = new Map<string, ProductSet[]>();
+    if (productSetsResult.data) {
+      productSetsResult.data.forEach((ps) => {
+        if (!productSetsMap.has(ps.product_id)) {
+          productSetsMap.set(ps.product_id, []);
+        }
+        productSetsMap.get(ps.product_id)?.push({
+          product_set_id: ps.product_set_id,
+          product_name: ps.product_name,
+          normalized_product_name: ps.normalized_product_name,
+          link_url: ps.link_url,
+          created_at: ps.created_at,
+          thumbnail: ps.thumbnail,
+          label: ps.label,
+          platforms: Array.isArray(ps.platforms) && ps.platforms.length > 0 
+            ? ps.platforms[0] 
+            : ps.platforms,
+        });
+      });
+    }
+
+    // products, brands, product_sets 데이터 결합 및 product_id -> id 매핑
     const productsWithBrands =
       productsResult.data?.map((product) => ({
         ...product,
@@ -97,15 +159,16 @@ export async function fetchProducts({
           product.brand_id && brandsMap.get(product.brand_id)
             ? { name: brandsMap.get(product.brand_id)?.name }
             : undefined,
+        product_sets: productSetsMap.get(product.product_id) || [],
       })) || [];
 
     // 브랜드 정렬이 필요한 경우 클라이언트 사이드에서 정렬
-    if (sortField === 'brand') {
+    if (sortField === "brand") {
       productsWithBrands.sort((a, b) => {
-        const brandA = a.brands?.name || '';
-        const brandB = b.brands?.name || '';
-        const comparison = brandA.localeCompare(brandB, 'ko');
-        return sortDirection === 'asc' ? comparison : -comparison;
+        const brandA = a.brands?.name || "";
+        const brandB = b.brands?.name || "";
+        const comparison = brandA.localeCompare(brandB, "ko");
+        return sortDirection === "asc" ? comparison : -comparison;
       });
     }
 
@@ -143,9 +206,88 @@ export async function fetchBrands(): Promise<Brand[]> {
 }
 
 /**
+ * 단일 상품을 조회합니다.
+ */
+export async function fetchSingleProduct(productId: string): Promise<Product | null> {
+  try {
+    // 병렬로 상품, 브랜드, product_sets 데이터 가져오기
+    const [productResult, brandsResult, productSetsResult] = await Promise.all([
+      supabase
+        .from("products")
+        .select("*")
+        .eq("product_id", productId)
+        .single(),
+      supabase.from("brands").select("brand_id, name"),
+      supabase
+        .from("product_sets")
+        .select(`
+          product_set_id,
+          product_name,
+          normalized_product_name,
+          link_url,
+          created_at,
+          thumbnail,
+          label,
+          platforms(name)
+        `)
+        .eq("product_id", productId),
+    ]);
+
+    if (productResult.error) {
+      console.error("Product error:", productResult.error);
+      return null;
+    }
+
+    if (brandsResult.error) {
+      console.error("Brands error:", brandsResult.error);
+    }
+
+    if (productSetsResult.error) {
+      console.error("Product sets error:", productSetsResult.error);
+    }
+
+    // 브랜드 맵 생성
+    const brandsMap = new Map(
+      brandsResult.data?.map((brand) => [brand.brand_id, brand]) || []
+    );
+
+    // product_sets 데이터 매핑
+    const productSets = productSetsResult.data?.map((ps) => ({
+      product_set_id: ps.product_set_id,
+      product_name: ps.product_name,
+      normalized_product_name: ps.normalized_product_name,
+      link_url: ps.link_url,
+      created_at: ps.created_at,
+      thumbnail: ps.thumbnail,
+      label: ps.label,
+      platforms: Array.isArray(ps.platforms) && ps.platforms.length > 0 
+        ? ps.platforms[0] 
+        : ps.platforms,
+    })) || [];
+
+    // 상품 데이터와 브랜드, product_sets 정보 결합
+    const productWithBrand: Product = {
+      ...productResult.data,
+      id: productResult.data.product_id,
+      brands: productResult.data.brand_id && brandsMap.get(productResult.data.brand_id)
+        ? { name: brandsMap.get(productResult.data.brand_id)?.name }
+        : undefined,
+      product_sets: productSets,
+    };
+
+    return productWithBrand;
+  } catch (error) {
+    console.error("상품 조회 에러:", error);
+    return null;
+  }
+}
+
+/**
  * 상품을 업데이트합니다.
  */
-export async function updateProduct(product: Partial<Product> & { id: string }) {
+export async function updateProduct(
+  product: Partial<Product> & { id: string }
+) {
   try {
     const { error } = await supabase
       .from("products")
@@ -160,9 +302,9 @@ export async function updateProduct(product: Partial<Product> & { id: string }) 
     return { success: true };
   } catch (error) {
     console.error("상품 수정 에러:", error);
-    return { 
-      success: false, 
-      error: "상품 수정 중 오류가 발생했습니다." 
+    return {
+      success: false,
+      error: "상품 수정 중 오류가 발생했습니다.",
     };
   }
 }
@@ -181,9 +323,9 @@ export async function deleteProduct(productId: string) {
     return { success: true };
   } catch (error) {
     console.error("상품 삭제 에러:", error);
-    return { 
-      success: false, 
-      error: "상품 삭제 중 오류가 발생했습니다." 
+    return {
+      success: false,
+      error: "상품 삭제 중 오류가 발생했습니다.",
     };
   }
 }

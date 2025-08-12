@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { supabase } from "../lib/supabase";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,19 +34,15 @@ import {
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { STATIC_URL } from "../lib/constants";
+import {
+  fetchSingleProduct,
+  fetchBrands,
+  updateProduct,
+  deleteProduct,
+  type Product as ServiceProduct,
+} from "../services/productService";
 
-interface Product {
-  product_id: string;
-  name: string;
-  description: string;
-  image_url?: string;
-  brand_id: string;
-  created_at: string;
-  updated_at: string;
-  brands?: {
-    name: string;
-  };
-}
+type Product = ServiceProduct;
 
 interface Brand {
   brand_id: string;
@@ -83,130 +78,75 @@ export default function ProductDetail({
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProduct = async () => {
-    try {
-      setIsLoading(true);
+    setIsLoading(true);
+    const productData = await fetchSingleProduct(productId);
 
-      // 상품 데이터와 브랜드 데이터를 병렬로 조회
-      const [productResult, brandsResult] = await Promise.all([
-        supabase
-          .from("products")
-          .select("*")
-          .eq("product_id", productId)
-          .single(),
-        supabase.from("brands").select("brand_id, name"),
-      ]);
-
-      if (productResult.error) {
-        throw productResult.error;
-      }
-
-      if (brandsResult.error) {
-        throw brandsResult.error;
-      }
-
-      // 브랜드 정보를 매핑
-      const brandMap = new Map(
-        brandsResult.data?.map((brand) => [brand.brand_id, brand]) || []
-      );
-
-      const productWithBrand = {
-        ...productResult.data,
-        brands: productResult.data.brand_id
-          ? brandMap.get(productResult.data.brand_id)
-          : null,
-      };
-
-      setProduct(productWithBrand);
+    if (productData) {
+      setProduct(productData);
       setFormData({
-        name: productWithBrand.name,
-        description: productWithBrand.description,
-        brand_id: productWithBrand.brand_id || "",
+        name: productData.name,
+        description: productData.description,
+        brand_id: productData.brand_id || "",
       });
-    } catch (error) {
-      console.error("상품 로딩 에러:", error);
+    } else {
       toast({
         title: "오류",
         description: "상품을 불러오는 중 오류가 발생했습니다.",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   };
 
   const loadBrands = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("brands")
-        .select("*")
-        .order("name");
-
-      if (error) throw error;
-      setBrands(data || []);
-    } catch (error) {
-      console.error("브랜드 로딩 에러:", error);
-    }
+    const data = await fetchBrands();
+    setBrands(data);
   };
 
   const handleSave = async () => {
     if (!product) return;
 
-    try {
-      setIsSaving(true);
+    setIsSaving(true);
+    const result = await updateProduct({
+      ...formData,
+      id: product.id,
+    });
 
-      const { error } = await supabase
-        .from("products")
-        .update({
-          name: formData.name,
-          description: formData.description,
-          brand_id: formData.brand_id || null,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("product_id", productId);
-
-      if (error) throw error;
-
+    if (result.success) {
       toast({
         title: "성공",
         description: "상품이 성공적으로 수정되었습니다.",
       });
-
       setIsEditing(false);
-      loadProduct(); // 데이터 새로고침
-    } catch (error) {
-      console.error("상품 수정 에러:", error);
+      loadProduct();
+    } else {
       toast({
         title: "오류",
-        description: "상품 수정 중 오류가 발생했습니다.",
+        description: result.error,
         variant: "destructive",
       });
-    } finally {
-      setIsSaving(false);
     }
+
+    setIsSaving(false);
   };
 
   const handleDelete = async () => {
     if (!product) return;
 
-    try {
-      const { error } = await supabase
-        .from("products")
-        .delete()
-        .eq("product_id", productId);
+    const result = await deleteProduct(product.id);
 
-      if (error) throw error;
-
+    if (result.success) {
       toast({
         title: "성공",
         description: "상품이 성공적으로 삭제되었습니다.",
       });
-
-      onBack(); // 목록으로 돌아가기
-    } catch (error) {
-      console.error("상품 삭제 에러:", error);
+      setIsDeleteDialogOpen(false);
+      onBack();
+    } else {
       toast({
         title: "오류",
-        description: "상품 삭제 중 오류가 발생했습니다.",
+        description: result.error,
         variant: "destructive",
       });
     }
@@ -231,10 +171,10 @@ export default function ProductDetail({
         description: "상품 ID가 클립보드에 복사되었습니다.",
       });
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (_) { // eslint-disable-line @typescript-eslint/no-unused-vars
+    } catch (_) {
       toast({
         title: "오류",
-        description: "클립보드 복사에 실패했습니다.",
+        description: `클립보드 복사에 실패했습니다. ${_}`,
         variant: "destructive",
       });
     }
@@ -440,7 +380,9 @@ export default function ProductDetail({
               <div className="flex items-center space-x-2 text-sm">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
                 <span className="text-muted-foreground">수정일:</span>
-                <span>{formatDate(product.updated_at)}</span>
+                <span>
+                  {formatDate(product.updated_at || product.created_at)}
+                </span>
               </div>
               <div className="flex items-center space-x-2 text-sm">
                 <Package className="w-4 h-4 text-muted-foreground" />
@@ -449,6 +391,95 @@ export default function ProductDetail({
                   {product.product_id}
                 </code>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Product Sets */}
+          <Card>
+            <CardHeader>
+              <CardTitle>기획 세트</CardTitle>
+              <CardDescription>
+                이 상품과 연결된 기획 세트 목록입니다. (총{" "}
+                {product.product_sets?.length || 0}개)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {product.product_sets && product.product_sets.length > 0 ? (
+                <div className="space-y-4">
+                  {product.product_sets.map((productSet) => (
+                    <div
+                      key={productSet.product_set_id}
+                      className="border rounded-lg p-4 space-y-3"
+                    >
+                      <div className="flex items-start space-x-4">
+                        {/* 썸네일 */}
+                        <div className="flex-shrink-0">
+                          {productSet.thumbnail ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={productSet.thumbnail}
+                              alt={productSet.normalized_product_name}
+                              className="w-16 h-16 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                              <Package className="w-8 h-8 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 내용 */}
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">
+                                {productSet.normalized_product_name}
+                              </h4>
+                              {productSet.label && (
+                                <div className="mt-1">
+                                  <Badge variant="outline" className="text-xs">
+                                    {productSet.label}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+                            <Badge variant="secondary">
+                              {Array.isArray(productSet.platforms)
+                                ? productSet.platforms[0]?.name || "플랫폼 없음"
+                                : productSet.platforms?.name || "플랫폼 없음"}
+                            </Badge>
+                          </div>
+
+                          <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                            <span>ID: {productSet.product_set_id}</span>
+                            <span>•</span>
+                            <span>
+                              등록일: {formatDate(productSet.created_at)}
+                            </span>
+                          </div>
+
+                          {productSet.link_url && (
+                            <div className="text-sm">
+                              <a
+                                href={productSet.link_url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 underline"
+                              >
+                                상품 링크 보기
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  연관된 상품 세트가 없습니다.
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
