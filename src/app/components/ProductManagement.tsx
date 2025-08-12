@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { getLocalStorage, setLocalStorage } from "../lib/localStorage";
-import { formatNumber } from "../lib/formatters";
 import {
   fetchProducts,
   fetchBrands,
@@ -57,6 +56,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { STATIC_URL } from "../lib/constants";
 import ProductDetail from "./ProductDetail";
 import ProductFilters from "./ProductFilters";
+import Pagination from "./Pagination";
 
 export default function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -66,7 +66,9 @@ export default function ProductManagement() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<"all" | "with" | "without">("all");
+  const [categoryFilter, setCategoryFilter] = useState<
+    "all" | "with" | "without"
+  >("all");
   const [isLoading, setIsLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -169,7 +171,15 @@ export default function ProductManagement() {
     // created_at 정렬은 서버에서 이미 처리됨
 
     setFilteredProducts(filtered);
-  }, [products, searchQuery, selectedBrand, selectedCategory, categoryFilter, sortField, sortDirection]);
+  }, [
+    products,
+    searchQuery,
+    selectedBrand,
+    selectedCategory,
+    categoryFilter,
+    sortField,
+    sortDirection,
+  ]);
 
   const loadProducts = async (page = 1, perPage = itemsPerPage) => {
     setIsLoading(true);
@@ -423,76 +433,14 @@ export default function ProductManagement() {
       )}
 
       {/* 페이지네이션 */}
-      {totalCount > 0 && (
-        <div className="flex items-center justify-between px-6">
-          <div className="flex items-center space-x-4">
-            <div className="text-sm text-muted-foreground">
-              전체 {formatNumber(totalCount)}개 중{" "}
-              {formatNumber((currentPage - 1) * itemsPerPage + 1)}-
-              {formatNumber(Math.min(currentPage * itemsPerPage, totalCount))}개
-              표시
-            </div>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-              className="px-3 py-1 border border-input bg-background rounded-md text-sm"
-            >
-              <option value={20}>20개씩</option>
-              <option value={100}>100개씩</option>
-              <option value={500}>500개씩</option>
-            </select>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadProducts(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              이전
-            </Button>
-            <div className="flex items-center space-x-1">
-              {Array.from(
-                { length: Math.ceil(totalCount / itemsPerPage) },
-                (_, i) => i + 1
-              )
-                .filter((page) => {
-                  const totalPages = Math.ceil(totalCount / itemsPerPage);
-                  if (totalPages <= 7) return true;
-                  if (page === 1 || page === totalPages) return true;
-                  if (Math.abs(page - currentPage) <= 1) return true;
-                  if (page === 2 && currentPage <= 3) return true;
-                  if (page === totalPages - 1 && currentPage >= totalPages - 2)
-                    return true;
-                  return false;
-                })
-                .map((page, index, array) => (
-                  <React.Fragment key={page}>
-                    {index > 0 && array[index - 1] !== page - 1 && (
-                      <span className="px-2 text-muted-foreground">...</span>
-                    )}
-                    <Button
-                      variant={currentPage === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => loadProducts(page)}
-                      className="w-10"
-                    >
-                      {formatNumber(page)}
-                    </Button>
-                  </React.Fragment>
-                ))}
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => loadProducts(currentPage + 1)}
-              disabled={currentPage === Math.ceil(totalCount / itemsPerPage)}
-            >
-              다음
-            </Button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        className="mb-0"
+        currentPage={currentPage}
+        totalCount={totalCount}
+        itemsPerPage={itemsPerPage}
+        onPageChange={loadProducts}
+        onItemsPerPageChange={handleItemsPerPageChange}
+      />
 
       {/* 상품 테이블 */}
       <Card>
@@ -684,83 +632,14 @@ export default function ProductManagement() {
           )}
 
           {/* 페이지네이션 */}
-          {totalCount > 0 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t">
-              <div className="flex items-center space-x-4">
-                <div className="text-sm text-muted-foreground">
-                  전체 {totalCount}개 중 {(currentPage - 1) * itemsPerPage + 1}-
-                  {Math.min(currentPage * itemsPerPage, totalCount)}개 표시
-                </div>
-                <select
-                  value={itemsPerPage}
-                  onChange={(e) =>
-                    handleItemsPerPageChange(Number(e.target.value))
-                  }
-                  className="px-3 py-1 border border-input bg-background rounded-md text-sm"
-                >
-                  <option value={20}>20개씩</option>
-                  <option value={100}>100개씩</option>
-                  <option value={500}>500개씩</option>
-                </select>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadProducts(currentPage - 1)}
-                  disabled={currentPage === 1}
-                >
-                  이전
-                </Button>
-                <div className="flex items-center space-x-1">
-                  {Array.from(
-                    { length: Math.ceil(totalCount / itemsPerPage) },
-                    (_, i) => i + 1
-                  )
-                    .filter((page) => {
-                      const totalPages = Math.ceil(totalCount / itemsPerPage);
-                      if (totalPages <= 7) return true;
-                      if (page === 1 || page === totalPages) return true;
-                      if (Math.abs(page - currentPage) <= 1) return true;
-                      if (page === 2 && currentPage <= 3) return true;
-                      if (
-                        page === totalPages - 1 &&
-                        currentPage >= totalPages - 2
-                      )
-                        return true;
-                      return false;
-                    })
-                    .map((page, index, array) => (
-                      <React.Fragment key={page}>
-                        {index > 0 && array[index - 1] !== page - 1 && (
-                          <span className="px-2 text-muted-foreground">
-                            ...
-                          </span>
-                        )}
-                        <Button
-                          variant={currentPage === page ? "default" : "outline"}
-                          size="sm"
-                          onClick={() => loadProducts(page)}
-                          className="w-10"
-                        >
-                          {formatNumber(page)}
-                        </Button>
-                      </React.Fragment>
-                    ))}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => loadProducts(currentPage + 1)}
-                  disabled={
-                    currentPage === Math.ceil(totalCount / itemsPerPage)
-                  }
-                >
-                  다음
-                </Button>
-              </div>
-            </div>
-          )}
+          <Pagination
+            currentPage={currentPage}
+            totalCount={totalCount}
+            itemsPerPage={itemsPerPage}
+            onPageChange={loadProducts}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            className="border-t"
+          />
         </CardContent>
       </Card>
 
