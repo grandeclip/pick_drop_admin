@@ -428,3 +428,68 @@ export async function deleteProduct(productId: string) {
     };
   }
 }
+
+/**
+ * 기획 세트를 삭제합니다.
+ */
+export async function deleteProductSet(productSetId: string) {
+  try {
+    const { error } = await supabase
+      .from("product_sets")
+      .delete()
+      .eq("product_set_id", productSetId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error("기획 세트 삭제 에러:", error);
+    return {
+      success: false,
+      error: "기획 세트 삭제 중 오류가 발생했습니다.",
+    };
+  }
+}
+
+/**
+ * 기획 세트를 업데이트합니다.
+ */
+export async function updateProductSet(
+  productSetId: string,
+  data: {
+    product_name?: string;
+    normalized_product_name?: string;
+    link_url?: string;
+    label?: string;
+  }
+) {
+  try {
+    const updateData: Record<string, string | undefined> = {};
+    
+    if (data.product_name !== undefined) {
+      updateData.product_name = data.product_name;
+    }
+    if (data.normalized_product_name !== undefined) {
+      updateData.normalized_product_name = data.normalized_product_name;
+    }
+    if (data.link_url !== undefined) {
+      updateData.link_url = data.link_url;
+    }
+    if (data.label !== undefined) {
+      updateData.label = data.label;
+    }
+
+    const { error } = await supabase
+      .from("product_sets")
+      .update(updateData)
+      .eq("product_set_id", productSetId);
+
+    if (error) throw error;
+    return { success: true };
+  } catch (error) {
+    console.error("기획 세트 수정 에러:", error);
+    return {
+      success: false,
+      error: "기획 세트 수정 중 오류가 발생했습니다.",
+    };
+  }
+}

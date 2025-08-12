@@ -40,8 +40,11 @@ import {
   fetchSingleProduct,
   deleteProduct,
   updateProduct,
+  deleteProductSet,
+  updateProductSet,
   fetchBrands,
   type Product as ServiceProduct,
+  type ProductSet,
   type Brand,
 } from "../services/productService";
 import {
@@ -76,6 +79,22 @@ export default function ProductDetail({
     category_id: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+
+  // 기획 세트 수정 관련 상태
+  const [isEditProductSetDialogOpen, setIsEditProductSetDialogOpen] =
+    useState(false);
+  const [selectedProductSet, setSelectedProductSet] =
+    useState<ProductSet | null>(null);
+  const [editedProductSet, setEditedProductSet] = useState({
+    product_name: "",
+    normalized_product_name: "",
+    link_url: "",
+    label: "",
+  });
+  const [isSavingProductSet, setIsSavingProductSet] = useState(false);
+  const [isDeleteProductSetDialogOpen, setIsDeleteProductSetDialogOpen] =
+    useState(false);
+
   const { toast } = useToast();
 
   useEffect(() => {
@@ -166,7 +185,6 @@ export default function ProductDetail({
     }
   };
 
-
   const handleEditMode = () => {
     if (product) {
       setEditedProduct({
@@ -220,6 +238,68 @@ export default function ProductDetail({
       });
     }
     setIsEditMode(false);
+  };
+
+  // 기획 세트 관련 핸들러
+  const handleEditProductSet = (productSet: ProductSet) => {
+    setSelectedProductSet(productSet);
+    setEditedProductSet({
+      product_name: productSet.product_name,
+      normalized_product_name: productSet.normalized_product_name,
+      link_url: productSet.link_url,
+      label: productSet.label || "",
+    });
+    setIsEditProductSetDialogOpen(true);
+  };
+
+  const handleSaveProductSet = async () => {
+    if (!selectedProductSet) return;
+
+    setIsSavingProductSet(true);
+    const result = await updateProductSet(selectedProductSet.product_set_id, {
+      product_name: editedProductSet.product_name,
+      normalized_product_name: editedProductSet.normalized_product_name,
+      link_url: editedProductSet.link_url,
+      label: editedProductSet.label || undefined,
+    });
+
+    if (result.success) {
+      toast({
+        title: "성공",
+        description: "기획 세트가 성공적으로 수정되었습니다.",
+      });
+      setIsEditProductSetDialogOpen(false);
+      loadProduct(); // 데이터 새로고침
+    } else {
+      toast({
+        title: "오류",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
+    setIsSavingProductSet(false);
+  };
+
+  const handleDeleteProductSet = async () => {
+    if (!selectedProductSet) return;
+
+    const result = await deleteProductSet(selectedProductSet.product_set_id);
+
+    if (result.success) {
+      toast({
+        title: "성공",
+        description: "기획 세트가 성공적으로 삭제되었습니다.",
+      });
+      setIsDeleteProductSetDialogOpen(false);
+      setSelectedProductSet(null);
+      loadProduct(); // 데이터 새로고침
+    } else {
+      toast({
+        title: "오류",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
   };
 
   if (isLoading) {
@@ -276,51 +356,14 @@ export default function ProductDetail({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {isEditMode ? (
-            <>
-              <Button
-                onClick={handleSaveProduct}
-                disabled={!editedProduct.name.trim() || isSaving}
-                className="bg-green-600 hover:bg-green-700"
-                size="sm"
-              >
-                {isSaving ? (
-                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
-                ) : (
-                  <Save className="w-4 h-4 mr-2" />
-                )}
-                {isSaving ? "저장 중..." : "저장"}
-              </Button>
-              <Button
-                onClick={handleCancelEdit}
-                disabled={isSaving}
-                variant="outline"
-                size="sm"
-              >
-                <X className="w-4 h-4 mr-2" />
-                취소
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                onClick={handleEditMode}
-                variant="outline"
-                size="sm"
-              >
-                <Edit className="w-4 h-4 mr-2" />
-                수정
-              </Button>
-              <Button
-                onClick={() => setIsDeleteDialogOpen(true)}
-                variant="destructive"
-                size="sm"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                삭제
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={() => setIsDeleteDialogOpen(true)}
+            variant="destructive"
+            size="sm"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            삭제
+          </Button>
         </div>
       </div>
 
@@ -383,8 +426,43 @@ export default function ProductDetail({
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>기본 정보</CardTitle>
-              <CardDescription>상품의 기본 정보입니다</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>기본 정보</CardTitle>
+                  <CardDescription>상품의 기본 정보입니다</CardDescription>
+                </div>
+                {isEditMode ? (
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      onClick={handleSaveProduct}
+                      disabled={!editedProduct.name.trim() || isSaving}
+                      className="bg-green-600 hover:bg-green-700"
+                      size="sm"
+                    >
+                      {isSaving ? (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                      ) : (
+                        <Save className="w-4 h-4 mr-2" />
+                      )}
+                      {isSaving ? "저장 중..." : "저장"}
+                    </Button>
+                    <Button
+                      onClick={handleCancelEdit}
+                      disabled={isSaving}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      취소
+                    </Button>
+                  </div>
+                ) : (
+                  <Button onClick={handleEditMode} variant="outline" size="sm">
+                    <Edit className="w-4 h-4 mr-2" />
+                    수정
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {isEditMode ? (
@@ -395,7 +473,12 @@ export default function ProductDetail({
                     <Input
                       id="edit-name"
                       value={editedProduct.name}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedProduct(prev => ({ ...prev, name: e.target.value }))}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                        setEditedProduct((prev) => ({
+                          ...prev,
+                          name: e.target.value,
+                        }))
+                      }
                       placeholder="상품명을 입력하세요"
                     />
                   </div>
@@ -405,7 +488,12 @@ export default function ProductDetail({
                     <Textarea
                       id="edit-description"
                       value={editedProduct.description}
-                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditedProduct(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                        setEditedProduct((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
                       placeholder="상품 설명을 입력하세요"
                       rows={4}
                     />
@@ -416,7 +504,12 @@ export default function ProductDetail({
                     <select
                       id="edit-brand"
                       value={editedProduct.brand_id}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEditedProduct(prev => ({ ...prev, brand_id: e.target.value }))}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        setEditedProduct((prev) => ({
+                          ...prev,
+                          brand_id: e.target.value,
+                        }))
+                      }
                       className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
                     >
                       <option value="">브랜드 선택</option>
@@ -433,7 +526,12 @@ export default function ProductDetail({
                     <select
                       id="edit-category"
                       value={editedProduct.category_id}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEditedProduct(prev => ({ ...prev, category_id: e.target.value }))}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        setEditedProduct((prev) => ({
+                          ...prev,
+                          category_id: e.target.value,
+                        }))
+                      }
                       className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
                     >
                       <option value="">카테고리 선택 없음</option>
@@ -493,8 +591,13 @@ export default function ProductDetail({
                           {index > 0 && (
                             <span className="text-muted-foreground">→</span>
                           )}
-                          <Badge 
-                            variant={index === product.categoryHierarchy!.path.length - 1 ? "secondary" : "outline"} 
+                          <Badge
+                            variant={
+                              index ===
+                              product.categoryHierarchy!.path.length - 1
+                                ? "secondary"
+                                : "outline"
+                            }
                             className="text-xs"
                           >
                             <Package className="w-3 h-3 mr-1" />
@@ -566,11 +669,34 @@ export default function ProductDetail({
                                 </div>
                               )}
                             </div>
-                            <Badge variant="secondary">
-                              {Array.isArray(productSet.platforms)
-                                ? productSet.platforms[0]?.name || "플랫폼 없음"
-                                : productSet.platforms?.name || "플랫폼 없음"}
-                            </Badge>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant="secondary">
+                                {Array.isArray(productSet.platforms)
+                                  ? productSet.platforms[0]?.name ||
+                                    "플랫폼 없음"
+                                  : productSet.platforms?.name || "플랫폼 없음"}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleEditProductSet(productSet)}
+                                title="수정"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedProductSet(productSet);
+                                  setIsDeleteProductSetDialogOpen(true);
+                                }}
+                                className="text-destructive hover:text-destructive"
+                                title="삭제"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
 
                           <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -630,6 +756,154 @@ export default function ProductDetail({
               취소
             </Button>
             <Button variant="destructive" onClick={handleDelete}>
+              <Trash2 className="w-4 h-4 mr-2" />
+              삭제
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 기획 세트 수정 다이얼로그 */}
+      <Dialog
+        open={isEditProductSetDialogOpen}
+        onOpenChange={setIsEditProductSetDialogOpen}
+      >
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Edit className="w-5 h-5 text-blue-600" />
+              <span>기획 세트 수정</span>
+            </DialogTitle>
+            <DialogDescription>기획 세트 정보를 수정합니다.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-normalized-name">정규화된 상품명</Label>
+              <Input
+                id="edit-normalized-name"
+                value={editedProductSet.normalized_product_name}
+                onChange={(e) =>
+                  setEditedProductSet((prev) => ({
+                    ...prev,
+                    normalized_product_name: e.target.value,
+                  }))
+                }
+                placeholder="정규화된 상품명을 입력하세요"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-product-name">상품명(비노출)</Label>
+              <Input
+                id="edit-product-name"
+                value={editedProductSet.product_name}
+                onChange={(e) =>
+                  setEditedProductSet((prev) => ({
+                    ...prev,
+                    product_name: e.target.value,
+                  }))
+                }
+                placeholder="상품명을 입력하세요"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-link-url">상품 링크</Label>
+              <Input
+                id="edit-link-url"
+                value={editedProductSet.link_url}
+                onChange={(e) =>
+                  setEditedProductSet((prev) => ({
+                    ...prev,
+                    link_url: e.target.value,
+                  }))
+                }
+                placeholder="상품 링크 URL을 입력하세요"
+                type="url"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="edit-label">라벨</Label>
+              <Input
+                id="edit-label"
+                value={editedProductSet.label}
+                onChange={(e) =>
+                  setEditedProductSet((prev) => ({
+                    ...prev,
+                    label: e.target.value,
+                  }))
+                }
+                placeholder="라벨을 입력하세요 (선택사항)"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsEditProductSetDialogOpen(false);
+                setSelectedProductSet(null);
+              }}
+              disabled={isSavingProductSet}
+            >
+              취소
+            </Button>
+            <Button
+              onClick={handleSaveProductSet}
+              disabled={
+                !editedProductSet.product_name.trim() ||
+                !editedProductSet.normalized_product_name.trim() ||
+                isSavingProductSet
+              }
+            >
+              {isSavingProductSet ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                  수정 중...
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 mr-2" />
+                  저장
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 기획 세트 삭제 확인 다이얼로그 */}
+      <Dialog
+        open={isDeleteProductSetDialogOpen}
+        onOpenChange={setIsDeleteProductSetDialogOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center space-x-2">
+              <Trash2 className="w-5 h-5 text-red-600" />
+              <span>기획 세트 삭제 확인</span>
+            </DialogTitle>
+            <DialogDescription>
+              <strong>{selectedProductSet?.normalized_product_name}</strong>{" "}
+              기획 세트를 삭제하시겠습니까?
+              <br />
+              삭제된 기획 세트는 복구할 수 없습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsDeleteProductSetDialogOpen(false);
+                setSelectedProductSet(null);
+              }}
+            >
+              취소
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteProductSet}>
               <Trash2 className="w-4 h-4 mr-2" />
               삭제
             </Button>
