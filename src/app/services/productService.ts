@@ -69,6 +69,8 @@ export interface FetchProductsParams {
 
 /**
  * 상품 목록을 가져옵니다.
+ * 서버에서는 항상 created_at 순으로 정렬하고, 
+ * name과 brand 정렬은 클라이언트에서 처리합니다.
  */
 export async function fetchProducts({
   page,
@@ -89,9 +91,9 @@ export async function fetchProducts({
       throw countError;
     }
 
-    // 정렬 필드 매핑 (brand는 join 후 클라이언트에서 정렬)
-    const orderField = sortField === "brand" ? "created_at" : sortField;
-    const ascending = sortField === "brand" ? false : sortDirection === "asc";
+    // 서버에서는 항상 created_at으로 정렬 (최신순)
+    const orderField = "created_at";
+    const ascending = sortField === "created_at" ? sortDirection === "asc" : false;
 
     // 병렬로 products, brands, categories, product_sets 데이터 가져오기
     const [productsResult, brandsResult, categoriesResult] = await Promise.all([
@@ -194,16 +196,6 @@ export async function fetchProducts({
             : undefined,
         product_sets: productSetsMap.get(product.product_id) || [],
       })) || [];
-
-    // 브랜드 정렬이 필요한 경우 클라이언트 사이드에서 정렬
-    if (sortField === "brand") {
-      productsWithBrands.sort((a, b) => {
-        const brandA = a.brands?.name || "";
-        const brandB = b.brands?.name || "";
-        const comparison = brandA.localeCompare(brandB, "ko");
-        return sortDirection === "asc" ? comparison : -comparison;
-      });
-    }
 
     return {
       products: productsWithBrands,

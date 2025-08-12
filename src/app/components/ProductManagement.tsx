@@ -18,7 +18,6 @@ import {
   type Category,
 } from "../services/productCategoryService";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -36,7 +35,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Search,
   Trash2,
   Package,
   ArrowUpDown,
@@ -58,6 +56,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { STATIC_URL } from "../lib/constants";
 import ProductDetail from "./ProductDetail";
+import ProductFilters from "./ProductFilters";
 
 export default function ProductManagement() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -66,6 +65,8 @@ export default function ProductManagement() {
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [categoryFilter, setCategoryFilter] = useState<"all" | "with" | "without">("all");
   const [isLoading, setIsLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>("created_at");
   const [sortDirection, setSortDirection] = useState<SortDirection>("desc");
@@ -95,14 +96,14 @@ export default function ProductManagement() {
     loadCategories();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 정렬 변경 시 데이터 다시 로드
+  // created_at 정렬 변경 시에만 서버에서 데이터 다시 로드
   useEffect(() => {
-    if (products.length > 0) {
+    if (products.length > 0 && sortField === "created_at") {
       loadProducts(currentPage);
     }
   }, [sortField, sortDirection]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 검색 및 필터링 (정렬은 서버에서 처리)
+  // 검색, 필터링, 클라이언트 정렬
   useEffect(() => {
     let filtered = [...products];
 
@@ -125,8 +126,50 @@ export default function ProductManagement() {
       );
     }
 
+    // 특정 카테고리 필터링
+    if (selectedCategory !== "all") {
+      filtered = filtered.filter(
+        (product) => product.category_id === selectedCategory
+      );
+    }
+
+    // 카테고리 유무 필터링
+    if (categoryFilter === "with") {
+      filtered = filtered.filter(
+        (product) => product.category_id && product.category_id.trim() !== ""
+      );
+    } else if (categoryFilter === "without") {
+      filtered = filtered.filter(
+        (product) => !product.category_id || product.category_id.trim() === ""
+      );
+    }
+
+    // 클라이언트 사이드 정렬 (name, brand일 경우)
+    if (sortField === "name") {
+      filtered.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (sortDirection === "asc") {
+          return nameA < nameB ? -1 : nameA > nameB ? 1 : 0;
+        } else {
+          return nameA > nameB ? -1 : nameA < nameB ? 1 : 0;
+        }
+      });
+    } else if (sortField === "brand") {
+      filtered.sort((a, b) => {
+        const brandA = (a.brands?.name || "").toLowerCase();
+        const brandB = (b.brands?.name || "").toLowerCase();
+        if (sortDirection === "asc") {
+          return brandA < brandB ? -1 : brandA > brandB ? 1 : 0;
+        } else {
+          return brandA > brandB ? -1 : brandA < brandB ? 1 : 0;
+        }
+      });
+    }
+    // created_at 정렬은 서버에서 이미 처리됨
+
     setFilteredProducts(filtered);
-  }, [products, searchQuery, selectedBrand]);
+  }, [products, searchQuery, selectedBrand, selectedCategory, categoryFilter, sortField, sortDirection]);
 
   const loadProducts = async (page = 1, perPage = itemsPerPage) => {
     setIsLoading(true);
@@ -329,54 +372,22 @@ export default function ProductManagement() {
       </Card>
 
       {/* 검색 및 필터 */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="상품명, 설명, 브랜드로 검색..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
-              <select
-                value={selectedBrand}
-                onChange={(e) => setSelectedBrand(e.target.value)}
-                className="px-3 py-2 border border-input bg-background rounded-md text-sm"
-              >
-                <option value="all">모든 브랜드</option>
-                {brands.map((brand) => (
-                  <option key={brand.brand_id} value={brand.brand_id}>
-                    {brand.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={`${sortField}-${sortDirection}`}
-                onChange={(e) => {
-                  const [field, direction] = e.target.value.split("-") as [
-                    SortField,
-                    SortDirection
-                  ];
-                  setSortField(field);
-                  setSortDirection(direction);
-                }}
-                className="px-3 py-2 border border-input bg-background rounded-md text-sm"
-              >
-                <option value="created_at-desc">등록일순 (최신)</option>
-                <option value="created_at-asc">등록일순 (오래된)</option>
-                <option value="name-asc">상품명순 (가나다)</option>
-                <option value="name-desc">상품명순 (역순)</option>
-                <option value="brand-asc">브랜드명순 (가나다)</option>
-                <option value="brand-desc">브랜드명순 (역순)</option>
-              </select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <ProductFilters
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        selectedBrand={selectedBrand}
+        setSelectedBrand={setSelectedBrand}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        categoryFilter={categoryFilter}
+        setCategoryFilter={setCategoryFilter}
+        sortField={sortField}
+        setSortField={setSortField}
+        sortDirection={sortDirection}
+        setSortDirection={setSortDirection}
+        brands={brands}
+        categories={categories}
+      />
 
       {/* 일괄 작업 도구 모음 */}
       {selectedRows.size > 0 && (
