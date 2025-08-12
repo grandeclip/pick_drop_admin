@@ -279,6 +279,7 @@ export default function ProductForm({
 
           <div className="space-y-2">
             <Label htmlFor="product-image" className="flex items-center space-x-2">
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
               <Image className="w-4 h-4" />
               <span>상품 이미지</span>
             </Label>

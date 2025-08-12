@@ -29,7 +29,6 @@ import {
   Trash2,
   Package,
   Calendar,
-  User,
   Building,
   Copy,
   Check,
@@ -60,7 +59,10 @@ interface ProductDetailProps {
   onBack: () => void;
 }
 
-export default function ProductDetail({ productId, onBack }: ProductDetailProps) {
+export default function ProductDetail({
+  productId,
+  onBack,
+}: ProductDetailProps) {
   const [product, setProduct] = useState<Product | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,12 +80,12 @@ export default function ProductDetail({ productId, onBack }: ProductDetailProps)
   useEffect(() => {
     loadProduct();
     loadBrands();
-  }, [productId]);
+  }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProduct = async () => {
     try {
       setIsLoading(true);
-      
+
       // 상품 데이터와 브랜드 데이터를 병렬로 조회
       const [productResult, brandsResult] = await Promise.all([
         supabase
@@ -91,9 +93,7 @@ export default function ProductDetail({ productId, onBack }: ProductDetailProps)
           .select("*")
           .eq("product_id", productId)
           .single(),
-        supabase
-          .from("brands")
-          .select("brand_id, name")
+        supabase.from("brands").select("brand_id, name"),
       ]);
 
       if (productResult.error) {
@@ -106,13 +106,14 @@ export default function ProductDetail({ productId, onBack }: ProductDetailProps)
 
       // 브랜드 정보를 매핑
       const brandMap = new Map(
-        brandsResult.data?.map(brand => [brand.brand_id, brand]) || []
+        brandsResult.data?.map((brand) => [brand.brand_id, brand]) || []
       );
 
       const productWithBrand = {
         ...productResult.data,
-        brands: productResult.data.brand_id ? 
-          brandMap.get(productResult.data.brand_id) : null
+        brands: productResult.data.brand_id
+          ? brandMap.get(productResult.data.brand_id)
+          : null,
       };
 
       setProduct(productWithBrand);
@@ -152,7 +153,7 @@ export default function ProductDetail({ productId, onBack }: ProductDetailProps)
 
     try {
       setIsSaving(true);
-      
+
       const { error } = await supabase
         .from("products")
         .update({
@@ -230,7 +231,7 @@ export default function ProductDetail({ productId, onBack }: ProductDetailProps)
         description: "상품 ID가 클립보드에 복사되었습니다.",
       });
       setTimeout(() => setIsCopied(false), 2000);
-    } catch (error) {
+    } catch (_) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast({
         title: "오류",
         description: "클립보드 복사에 실패했습니다.",
@@ -274,7 +275,9 @@ export default function ProductDetail({ productId, onBack }: ProductDetailProps)
           <div>
             <h1 className="text-2xl font-bold">{product.name}</h1>
             <div className="flex items-center space-x-2">
-              <p className="text-sm text-muted-foreground">ID: {product.product_id}</p>
+              <p className="text-sm text-muted-foreground">
+                ID: {product.product_id}
+              </p>
               <Button
                 onClick={copyToClipboard}
                 variant="ghost"
@@ -300,11 +303,7 @@ export default function ProductDetail({ productId, onBack }: ProductDetailProps)
               >
                 취소
               </Button>
-              <Button
-                onClick={handleSave}
-                size="sm"
-                disabled={isSaving}
-              >
+              <Button onClick={handleSave} size="sm" disabled={isSaving}>
                 <Save className="w-4 h-4 mr-2" />
                 {isSaving ? "저장 중..." : "저장"}
               </Button>
@@ -341,6 +340,7 @@ export default function ProductDetail({ productId, onBack }: ProductDetailProps)
           <CardContent>
             <div className="aspect-square rounded-lg overflow-hidden bg-muted flex items-center justify-center">
               {product.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={`${STATIC_URL}${product.image_url}`}
                   alt={product.name}

@@ -252,7 +252,7 @@ export default function ProductManagement() {
         description: "상품 ID가 클립보드에 복사되었습니다.",
       });
       setTimeout(() => setCopiedId(null), 2000);
-    } catch (error) {
+    } catch (_) { // eslint-disable-line @typescript-eslint/no-unused-vars
       toast({
         title: "오류",
         description: "클립보드 복사에 실패했습니다.",
@@ -480,6 +480,7 @@ export default function ProductManagement() {
                     <TableCell className="font-medium">
                       <div className="flex items-center space-x-3">
                         {product.image_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img
                             src={`${STATIC_URL}${product.image_url}`}
                             alt={product.name}

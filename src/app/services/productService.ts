@@ -89,7 +89,7 @@ export async function fetchProducts({
     );
 
     // products와 brands 데이터 결합 및 product_id -> id 매핑
-    let productsWithBrands =
+    const productsWithBrands =
       productsResult.data?.map((product) => ({
         ...product,
         id: product.product_id, // product_id를 id로 매핑
