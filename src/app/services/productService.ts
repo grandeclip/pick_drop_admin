@@ -335,14 +335,17 @@ export async function updateProduct(
   product: Partial<Product> & { id: string }
 ) {
   try {
+    const updateData: Record<string, string | undefined> = {};
+    
+    if (product.name !== undefined) updateData.name = product.name;
+    if (product.description !== undefined) updateData.description = product.description;
+    if (product.brand_id !== undefined) updateData.brand_id = product.brand_id;
+    if (product.category_id !== undefined) updateData.category_id = product.category_id;
+
     const { error } = await supabase
       .from("products")
-      .update({
-        name: product.name,
-        description: product.description,
-        brand_id: product.brand_id,
-      })
-      .eq("id", product.id);
+      .update(updateData)
+      .eq("product_id", product.id);
 
     if (error) throw error;
     return { success: true };

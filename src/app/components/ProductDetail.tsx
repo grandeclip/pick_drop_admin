@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Card,
@@ -28,14 +30,24 @@ import {
   Copy,
   Check,
   Settings,
+  Edit,
+  X,
+  Save,
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { STATIC_URL } from "../lib/constants";
 import {
   fetchSingleProduct,
   deleteProduct,
+  updateProduct,
+  fetchBrands,
   type Product as ServiceProduct,
+  type Brand,
 } from "../services/productService";
+import {
+  fetchCategories,
+  type Category,
+} from "../services/productCategoryService";
 
 type Product = ServiceProduct;
 
@@ -51,13 +63,25 @@ export default function ProductDetail({
   onNavigateToCategory,
 }: ProductDetailProps) {
   const [product, setProduct] = useState<Product | null>(null);
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editedProduct, setEditedProduct] = useState({
+    name: "",
+    description: "",
+    brand_id: "",
+    category_id: "",
+  });
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     loadProduct();
+    loadBrands();
+    loadCategories();
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProduct = async () => {
@@ -66,6 +90,12 @@ export default function ProductDetail({
 
     if (productData) {
       setProduct(productData);
+      setEditedProduct({
+        name: productData.name,
+        description: productData.description,
+        brand_id: productData.brand_id,
+        category_id: productData.category_id || "",
+      });
     } else {
       toast({
         title: "오류",
@@ -75,6 +105,16 @@ export default function ProductDetail({
     }
 
     setIsLoading(false);
+  };
+
+  const loadBrands = async () => {
+    const data = await fetchBrands();
+    setBrands(data);
+  };
+
+  const loadCategories = async () => {
+    const data = await fetchCategories();
+    setCategories(data);
   };
 
   const handleDelete = async () => {
@@ -124,6 +164,62 @@ export default function ProductDetail({
         variant: "destructive",
       });
     }
+  };
+
+
+  const handleEditMode = () => {
+    if (product) {
+      setEditedProduct({
+        name: product.name,
+        description: product.description,
+        brand_id: product.brand_id,
+        category_id: product.category_id || "",
+      });
+      setIsEditMode(true);
+    }
+  };
+
+  const handleSaveProduct = async () => {
+    if (!product || !editedProduct.name.trim()) return;
+
+    setIsSaving(true);
+    const result = await updateProduct({
+      id: product.id,
+      name: editedProduct.name.trim(),
+      description: editedProduct.description,
+      brand_id: editedProduct.brand_id,
+      category_id: editedProduct.category_id || undefined,
+    });
+
+    if (result.success) {
+      toast({
+        title: "성공",
+        description: "상품 정보가 성공적으로 수정되었습니다.",
+      });
+      setIsEditMode(false);
+      // 상세 데이터 다시 로드
+      loadProduct();
+    } else {
+      toast({
+        title: "오류",
+        description: result.error,
+        variant: "destructive",
+      });
+    }
+
+    setIsSaving(false);
+  };
+
+  const handleCancelEdit = () => {
+    if (product) {
+      setEditedProduct({
+        name: product.name,
+        description: product.description,
+        brand_id: product.brand_id,
+        category_id: product.category_id || "",
+      });
+    }
+    setIsEditMode(false);
   };
 
   if (isLoading) {
@@ -180,14 +276,51 @@ export default function ProductDetail({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          <Button
-            onClick={() => setIsDeleteDialogOpen(true)}
-            variant="destructive"
-            size="sm"
-          >
-            <Trash2 className="w-4 h-4 mr-2" />
-            삭제
-          </Button>
+          {isEditMode ? (
+            <>
+              <Button
+                onClick={handleSaveProduct}
+                disabled={!editedProduct.name.trim() || isSaving}
+                className="bg-green-600 hover:bg-green-700"
+                size="sm"
+              >
+                {isSaving ? (
+                  <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+                ) : (
+                  <Save className="w-4 h-4 mr-2" />
+                )}
+                {isSaving ? "저장 중..." : "저장"}
+              </Button>
+              <Button
+                onClick={handleCancelEdit}
+                disabled={isSaving}
+                variant="outline"
+                size="sm"
+              >
+                <X className="w-4 h-4 mr-2" />
+                취소
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={handleEditMode}
+                variant="outline"
+                size="sm"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                수정
+              </Button>
+              <Button
+                onClick={() => setIsDeleteDialogOpen(true)}
+                variant="destructive"
+                size="sm"
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                삭제
+              </Button>
+            </>
+          )}
         </div>
       </div>
 
@@ -224,25 +357,88 @@ export default function ProductDetail({
               <CardDescription>상품의 기본 정보입니다</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">상품명</Label>
-                <p className="text-sm font-medium">{product.name}</p>
-              </div>
+              {isEditMode ? (
+                // 편집 모드
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-name">상품명</Label>
+                    <Input
+                      id="edit-name"
+                      value={editedProduct.name}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditedProduct(prev => ({ ...prev, name: e.target.value }))}
+                      placeholder="상품명을 입력하세요"
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="description">설명</Label>
-                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {product.description}
-                </p>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-description">설명</Label>
+                    <Textarea
+                      id="edit-description"
+                      value={editedProduct.description}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setEditedProduct(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="상품 설명을 입력하세요"
+                      rows={4}
+                    />
+                  </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="brand">브랜드</Label>
-                <Badge variant="outline" className="w-fit">
-                  <Building className="w-3 h-3 mr-1" />
-                  {product.brands?.name || "브랜드 없음"}
-                </Badge>
-              </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-brand">브랜드</Label>
+                    <select
+                      id="edit-brand"
+                      value={editedProduct.brand_id}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEditedProduct(prev => ({ ...prev, brand_id: e.target.value }))}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                    >
+                      <option value="">브랜드 선택</option>
+                      {brands.map((brand) => (
+                        <option key={brand.brand_id} value={brand.brand_id}>
+                          {brand.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-category">카테고리</Label>
+                    <select
+                      id="edit-category"
+                      value={editedProduct.category_id}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEditedProduct(prev => ({ ...prev, category_id: e.target.value }))}
+                      className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
+                    >
+                      <option value="">카테고리 선택 없음</option>
+                      {categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              ) : (
+                // 읽기 모드
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">상품명</Label>
+                    <p className="text-sm font-medium">{product.name}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="description">설명</Label>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {product.description}
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="brand">브랜드</Label>
+                    <Badge variant="outline" className="w-fit">
+                      <Building className="w-3 h-3 mr-1" />
+                      {product.brands?.name || "브랜드 없음"}
+                    </Badge>
+                  </div>
+                </>
+              )}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
