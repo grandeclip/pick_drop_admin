@@ -22,7 +22,8 @@ export async function fetchCategories(): Promise<Category[]> {
   try {
     const { data, error } = await supabase
       .from("product_categories")
-      .select("*");
+      .select("*")
+      .order("created_at");
 
     if (error) throw error;
     return data || [];
@@ -35,7 +36,9 @@ export async function fetchCategories(): Promise<Category[]> {
 /**
  * 특정 카테고리의 계층 구조를 조회합니다.
  */
-export async function fetchCategoryHierarchy(categoryId: string): Promise<CategoryHierarchy | null> {
+export async function fetchCategoryHierarchy(
+  categoryId: string
+): Promise<CategoryHierarchy | null> {
   try {
     // 모든 카테고리 데이터 가져오기
     const { data: categories, error } = await supabase
@@ -46,8 +49,8 @@ export async function fetchCategoryHierarchy(categoryId: string): Promise<Catego
     if (!categories) return null;
 
     // 카테고리 맵 생성
-    const categoryMap = new Map(categories.map(cat => [cat.id, cat]));
-    
+    const categoryMap = new Map(categories.map((cat) => [cat.id, cat]));
+
     // 시작 카테고리 찾기
     const startCategory = categoryMap.get(categoryId);
     if (!startCategory) return null;
@@ -62,11 +65,11 @@ export async function fetchCategoryHierarchy(categoryId: string): Promise<Catego
         id: currentCategory.id,
         name: currentCategory.name,
         parent_id: currentCategory.parent_id,
-        level: level
+        level: level,
       });
-      
+
       if (!currentCategory.parent_id) break;
-      
+
       currentCategory = categoryMap.get(currentCategory.parent_id);
       level++;
     }
@@ -76,7 +79,7 @@ export async function fetchCategoryHierarchy(categoryId: string): Promise<Catego
       name: startCategory.name,
       parent_id: startCategory.parent_id,
       level: path.length - 1,
-      path: path
+      path: path,
     };
   } catch (error) {
     console.error("카테고리 계층 조회 에러:", error);
@@ -87,11 +90,16 @@ export async function fetchCategoryHierarchy(categoryId: string): Promise<Catego
 /**
  * 새 카테고리를 생성합니다.
  */
-export async function createCategory(name: string) {
+export async function createCategory(name: string, parent_id?: string) {
   try {
+    const insertData: { name: string; parent_id?: string } = { name };
+    if (parent_id) {
+      insertData.parent_id = parent_id;
+    }
+
     const { data, error } = await supabase
       .from("product_categories")
-      .insert({ name })
+      .insert(insertData)
       .select()
       .single();
 
@@ -109,12 +117,17 @@ export async function createCategory(name: string) {
 /**
  * 카테고리를 업데이트합니다.
  */
-export async function updateCategory(categoryId: string, name: string) {
+export async function updateCategory(categoryId: string, name: string, parent_id?: string) {
   try {
+    const updateData: { name: string; parent_id?: string | null } = { name };
+    if (parent_id !== undefined) {
+      updateData.parent_id = parent_id || null;
+    }
+
     const { error } = await supabase
       .from("product_categories")
-      .update({ name })
-      .eq("category_id", categoryId);
+      .update(updateData)
+      .eq("id", categoryId);
 
     if (error) throw error;
     return { success: true };
@@ -135,7 +148,7 @@ export async function deleteCategory(categoryId: string) {
     const { error } = await supabase
       .from("product_categories")
       .delete()
-      .eq("category_id", categoryId);
+      .eq("id", categoryId);
 
     if (error) throw error;
     return { success: true };

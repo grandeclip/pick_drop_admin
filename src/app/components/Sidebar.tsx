@@ -1,12 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Package, Archive, Star, Tag, ChevronRight, List } from "lucide-react";
+import { Package, Archive, Star, Tag, ChevronRight, List, Folder } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  activeTab: "product" | "productSet" | "mdpick" | "brand" | "productManage";
+  activeTab: "product" | "productSet" | "mdpick" | "brand" | "productManage" | "categoryManage";
   setActiveTab: (
-    tab: "product" | "productSet" | "mdpick" | "brand" | "productManage"
+    tab: "product" | "productSet" | "mdpick" | "brand" | "productManage" | "categoryManage"
   ) => void;
 }
 
@@ -56,6 +56,15 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       color: "from-slate-500 to-slate-600",
       bgColor: "bg-slate-50",
       iconBg: "bg-slate-500",
+    },
+    {
+      id: "categoryManage" as const,
+      label: "카테고리 관리",
+      description: "상품 카테고리를 생성하고 관리",
+      icon: Folder,
+      color: "from-green-500 to-green-600",
+      bgColor: "bg-green-50",
+      iconBg: "bg-green-500",
     },
   ];
 
