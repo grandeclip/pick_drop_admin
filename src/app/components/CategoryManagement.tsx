@@ -27,15 +27,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Trash2,
-  Edit,
-  Plus,
-  Folder,
-  Check,
-  X,
-  Search,
-} from "lucide-react";
+import { Trash2, Edit, Plus, Folder, Check, X, Search } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import {
   fetchCategories,
@@ -53,7 +45,9 @@ export default function CategoryManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(
+    null
+  );
   const [newCategoryName, setNewCategoryName] = useState("");
   const [newCategoryParentId, setNewCategoryParentId] = useState("");
   const [editCategoryName, setEditCategoryName] = useState("");
@@ -64,32 +58,33 @@ export default function CategoryManagement() {
 
   // 카테고리를 계층 구조로 정렬하는 함수
   const buildCategoryHierarchy = (categories: Category[]): Category[] => {
-    const categoryMap = new Map(categories.map(cat => [cat.id, cat]));
     const result: Category[] = [];
-    
+
     // 최상위 카테고리들을 먼저 찾기
-    const rootCategories = categories.filter(cat => !cat.parent_id);
-    
+    const rootCategories = categories.filter((cat) => !cat.parent_id);
+
     // 재귀적으로 자식 카테고리들을 추가하는 함수
     const addChildren = (parentCategory: Category, level = 0) => {
       result.push({ ...parentCategory, level });
-      
-      const children = categories.filter(cat => cat.parent_id === parentCategory.id);
+
+      const children = categories.filter(
+        (cat) => cat.parent_id === parentCategory.id
+      );
       children.sort((a, b) => a.name.localeCompare(b.name));
-      
-      children.forEach(child => {
+
+      children.forEach((child) => {
         addChildren(child, level + 1);
       });
     };
-    
+
     // 최상위 카테고리들을 이름순으로 정렬
     rootCategories.sort((a, b) => a.name.localeCompare(b.name));
-    
+
     // 각 최상위 카테고리와 그 하위 카테고리들을 순서대로 추가
-    rootCategories.forEach(root => {
+    rootCategories.forEach((root) => {
       addChildren(root);
     });
-    
+
     return result;
   };
 
@@ -100,7 +95,7 @@ export default function CategoryManagement() {
   useEffect(() => {
     // 검색이 있을 때는 평면적으로, 없을 때는 계층 구조로 표시
     let filtered: Category[];
-    
+
     if (searchQuery) {
       filtered = categories.filter((category) =>
         category.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -148,7 +143,10 @@ export default function CategoryManagement() {
     if (!selectedCategory || !editCategoryName.trim()) return;
 
     setIsSubmitting(true);
-    const result = await updateCategory(selectedCategory.id, editCategoryName.trim());
+    const result = await updateCategory(
+      selectedCategory.id,
+      editCategoryName.trim()
+    );
 
     if (result.success) {
       toast({
@@ -224,8 +222,7 @@ export default function CategoryManagement() {
               </div>
             </div>
             <Button onClick={() => setIsCreateDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              새 카테고리
+              <Plus className="w-4 h-4 mr-2" />새 카테고리
             </Button>
           </div>
         </CardHeader>
@@ -263,8 +260,7 @@ export default function CategoryManagement() {
                 새로운 카테고리를 추가해보세요
               </p>
               <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                첫 카테고리 추가
+                <Plus className="w-4 h-4 mr-2" />첫 카테고리 추가
               </Button>
             </div>
           ) : (
@@ -284,10 +280,15 @@ export default function CategoryManagement() {
                     className="hover:bg-muted/50 transition-colors"
                   >
                     <TableCell className="font-medium">
-                      <div className="flex items-center space-x-2" style={{ paddingLeft: `${(category.level || 0) * 20}px` }}>
+                      <div
+                        className="flex items-center space-x-2"
+                        style={{
+                          paddingLeft: `${(category.level || 0) * 20}px`,
+                        }}
+                      >
                         {(category.level || 0) > 0 && (
                           <span className="text-muted-foreground text-xs mr-1">
-                            {'└ '.repeat(1)}
+                            {"└ ".repeat(1)}
                           </span>
                         )}
                         <Folder className="w-4 h-4 text-muted-foreground" />
@@ -302,10 +303,13 @@ export default function CategoryManagement() {
                     <TableCell className="text-muted-foreground">
                       {category.parent_id ? (
                         <span className="text-sm">
-                          {categories.find(c => c.id === category.parent_id)?.name || '알 수 없음'}
+                          {categories.find((c) => c.id === category.parent_id)
+                            ?.name || "알 수 없음"}
                         </span>
                       ) : (
-                        <span className="text-xs text-muted-foreground">최상위</span>
+                        <span className="text-xs text-muted-foreground">
+                          최상위
+                        </span>
                       )}
                     </TableCell>
                     <TableCell className="text-muted-foreground">
@@ -348,9 +352,7 @@ export default function CategoryManagement() {
               <Plus className="w-5 h-5 text-green-600" />
               <span>새 카테고리 추가</span>
             </DialogTitle>
-            <DialogDescription>
-              새로운 카테고리를 추가합니다.
-            </DialogDescription>
+            <DialogDescription>새로운 카테고리를 추가합니다.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
@@ -500,7 +502,8 @@ export default function CategoryManagement() {
               <span>카테고리 삭제 확인</span>
             </DialogTitle>
             <DialogDescription>
-              <strong>{selectedCategory?.name}</strong> 카테고리를 삭제하시겠습니까?
+              <strong>{selectedCategory?.name}</strong> 카테고리를
+              삭제하시겠습니까?
               <br />
               삭제된 카테고리는 복구할 수 없습니다.
             </DialogDescription>
