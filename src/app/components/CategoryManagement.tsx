@@ -118,7 +118,10 @@ export default function CategoryManagement() {
     if (!newCategoryName.trim()) return;
 
     setIsSubmitting(true);
-    const result = await createCategory(newCategoryName.trim());
+    const result = await createCategory(
+      newCategoryName.trim(),
+      newCategoryParentId || undefined
+    );
 
     if (result.success) {
       toast({
@@ -127,6 +130,7 @@ export default function CategoryManagement() {
       });
       setIsCreateDialogOpen(false);
       setNewCategoryName("");
+      setNewCategoryParentId("");
       loadCategories();
     } else {
       toast({
