@@ -6,7 +6,6 @@ import { formatNumber } from "../lib/formatters";
 import { 
   fetchProducts, 
   fetchBrands, 
-  updateProduct, 
   deleteProduct,
   type Product,
   type Brand,
@@ -32,18 +31,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
   Search,
-  Edit3,
   Trash2,
   Package,
   ArrowUpDown,
@@ -65,8 +53,6 @@ export default function ProductManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [sortField, setSortField] = useState<SortField>('created_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState(() => 
@@ -145,10 +131,6 @@ export default function ProductManagement() {
     setBrands(data);
   };
 
-  const handleEdit = (product: Product) => {
-    setEditingProduct(product);
-    setIsEditDialogOpen(true);
-  };
 
   const handleViewDetail = (productId: string) => {
     setSelectedProductId(productId);
@@ -162,27 +144,6 @@ export default function ProductManagement() {
     loadProducts(currentPage);
   };
 
-  const handleUpdate = async () => {
-    if (!editingProduct) return;
-
-    const result = await updateProduct(editingProduct);
-    
-    if (result.success) {
-      toast({
-        title: "성공",
-        description: "상품이 성공적으로 수정되었습니다.",
-      });
-      setIsEditDialogOpen(false);
-      setEditingProduct(null);
-      loadProducts(currentPage);
-    } else {
-      toast({
-        title: "오류",
-        description: result.error,
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleDelete = async (productId: string) => {
     if (!confirm("정말로 이 상품을 삭제하시겠습니까?")) return;
@@ -531,17 +492,6 @@ export default function ProductManagement() {
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleEdit(product);
-                          }}
-                          title="수정"
-                        >
-                          <Edit3 className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
                             handleDelete(product.id);
                           }}
                           className="text-destructive hover:text-destructive"
@@ -636,82 +586,6 @@ export default function ProductManagement() {
         </CardContent>
       </Card>
 
-      {/* 편집 다이얼로그 */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>상품 수정</DialogTitle>
-            <DialogDescription>
-              상품 정보를 수정할 수 있습니다.
-            </DialogDescription>
-          </DialogHeader>
-
-          {editingProduct && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-name">상품명</Label>
-                <Input
-                  id="edit-name"
-                  value={editingProduct.name}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      name: e.target.value,
-                    })
-                  }
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-brand">브랜드</Label>
-                <select
-                  id="edit-brand"
-                  value={editingProduct.brand_id}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      brand_id: e.target.value,
-                    })
-                  }
-                  className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
-                >
-                  <option value="">브랜드 선택</option>
-                  {brands.map((brand) => (
-                    <option key={brand.brand_id} value={brand.brand_id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit-description">설명</Label>
-                <Textarea
-                  id="edit-description"
-                  value={editingProduct.description}
-                  onChange={(e) =>
-                    setEditingProduct({
-                      ...editingProduct,
-                      description: e.target.value,
-                    })
-                  }
-                  rows={4}
-                />
-              </div>
-            </div>
-          )}
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              취소
-            </Button>
-            <Button onClick={handleUpdate}>저장</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

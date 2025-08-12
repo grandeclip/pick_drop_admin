@@ -2,9 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Card,
   CardContent,
@@ -23,8 +21,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   ArrowLeft,
-  Edit3,
-  Save,
   Trash2,
   Package,
   Calendar,
@@ -36,18 +32,12 @@ import { useToast } from "@/components/ui/use-toast";
 import { STATIC_URL } from "../lib/constants";
 import {
   fetchSingleProduct,
-  fetchBrands,
-  updateProduct,
   deleteProduct,
   type Product as ServiceProduct,
 } from "../services/productService";
 
 type Product = ServiceProduct;
 
-interface Brand {
-  brand_id: string;
-  name: string;
-}
 
 interface ProductDetailProps {
   productId: string;
@@ -59,22 +49,13 @@ export default function ProductDetail({
   onBack,
 }: ProductDetailProps) {
   const [product, setProduct] = useState<Product | null>(null);
-  const [brands, setBrands] = useState<Brand[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    brand_id: "",
-  });
   const { toast } = useToast();
 
   useEffect(() => {
     loadProduct();
-    loadBrands();
   }, [productId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProduct = async () => {
@@ -83,11 +64,6 @@ export default function ProductDetail({
 
     if (productData) {
       setProduct(productData);
-      setFormData({
-        name: productData.name,
-        description: productData.description,
-        brand_id: productData.brand_id || "",
-      });
     } else {
       toast({
         title: "오류",
@@ -99,37 +75,6 @@ export default function ProductDetail({
     setIsLoading(false);
   };
 
-  const loadBrands = async () => {
-    const data = await fetchBrands();
-    setBrands(data);
-  };
-
-  const handleSave = async () => {
-    if (!product) return;
-
-    setIsSaving(true);
-    const result = await updateProduct({
-      ...formData,
-      id: product.id,
-    });
-
-    if (result.success) {
-      toast({
-        title: "성공",
-        description: "상품이 성공적으로 수정되었습니다.",
-      });
-      setIsEditing(false);
-      loadProduct();
-    } else {
-      toast({
-        title: "오류",
-        description: result.error,
-        variant: "destructive",
-      });
-    }
-
-    setIsSaving(false);
-  };
 
   const handleDelete = async () => {
     if (!product) return;
@@ -234,40 +179,14 @@ export default function ProductDetail({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {isEditing ? (
-            <>
-              <Button
-                onClick={() => setIsEditing(false)}
-                variant="outline"
-                size="sm"
-              >
-                취소
-              </Button>
-              <Button onClick={handleSave} size="sm" disabled={isSaving}>
-                <Save className="w-4 h-4 mr-2" />
-                {isSaving ? "저장 중..." : "저장"}
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                onClick={() => setIsEditing(true)}
-                variant="outline"
-                size="sm"
-              >
-                <Edit3 className="w-4 h-4 mr-2" />
-                수정
-              </Button>
-              <Button
-                onClick={() => setIsDeleteDialogOpen(true)}
-                variant="destructive"
-                size="sm"
-              >
-                <Trash2 className="w-4 h-4 mr-2" />
-                삭제
-              </Button>
-            </>
-          )}
+          <Button
+            onClick={() => setIsDeleteDialogOpen(true)}
+            variant="destructive"
+            size="sm"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            삭제
+          </Button>
         </div>
       </div>
 
@@ -302,66 +221,28 @@ export default function ProductDetail({
             <CardHeader>
               <CardTitle>기본 정보</CardTitle>
               <CardDescription>
-                상품의 기본 정보를 확인하고 수정할 수 있습니다
+                상품의 기본 정보입니다
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">상품명</Label>
-                {isEditing ? (
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                  />
-                ) : (
-                  <p className="text-sm font-medium">{product.name}</p>
-                )}
+                <p className="text-sm font-medium">{product.name}</p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="description">설명</Label>
-                {isEditing ? (
-                  <Textarea
-                    id="description"
-                    value={formData.description}
-                    onChange={(e) =>
-                      setFormData({ ...formData, description: e.target.value })
-                    }
-                    rows={4}
-                  />
-                ) : (
-                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {product.description}
-                  </p>
-                )}
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {product.description}
+                </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="brand">브랜드</Label>
-                {isEditing ? (
-                  <select
-                    value={formData.brand_id}
-                    onChange={(e) =>
-                      setFormData({ ...formData, brand_id: e.target.value })
-                    }
-                    className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm"
-                  >
-                    <option value="">브랜드 선택</option>
-                    {brands.map((brand) => (
-                      <option key={brand.brand_id} value={brand.brand_id}>
-                        {brand.name}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <Badge variant="outline" className="w-fit">
-                    <Building className="w-3 h-3 mr-1" />
-                    {product.brands?.name || "브랜드 없음"}
-                  </Badge>
-                )}
+                <Badge variant="outline" className="w-fit">
+                  <Building className="w-3 h-3 mr-1" />
+                  {product.brands?.name || "브랜드 없음"}
+                </Badge>
               </div>
             </CardContent>
           </Card>
