@@ -325,29 +325,59 @@ export default function ProductDetail({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* 상품 이미지 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>상품 이미지</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="aspect-square rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-              {product.image_url ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={`${STATIC_URL}${product.image_url}`}
-                  alt={product.name}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="text-center">
-                  <Package className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">이미지 없음</p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+        {/* 상품 이미지 및 메타데이터 */}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>상품 이미지</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="aspect-square rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                {product.image_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={`${STATIC_URL}${product.image_url}`}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="text-center">
+                    <Package className="w-16 h-16 text-muted-foreground mx-auto mb-2" />
+                    <p className="text-sm text-muted-foreground">이미지 없음</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* 메타데이터 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>메타데이터</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center space-x-2 text-sm">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-muted-foreground">등록일:</span>
+                <span>{formatDate(product.created_at)}</span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm">
+                <Calendar className="w-4 h-4 text-muted-foreground" />
+                <span className="text-muted-foreground">수정일:</span>
+                <span>
+                  {formatDate(product.updated_at || product.created_at)}
+                </span>
+              </div>
+              <div className="flex items-center space-x-2 text-sm">
+                <Package className="w-4 h-4 text-muted-foreground" />
+                <span className="text-muted-foreground">상품 ID:</span>
+                <code className="px-2 py-1 bg-muted rounded text-xs">
+                  {product.product_id}
+                </code>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* 상품 정보 */}
         <div className="lg:col-span-2 space-y-6">
@@ -483,34 +513,6 @@ export default function ProductDetail({
                     {product.categories?.name || "미분류"}
                   </Badge>
                 )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* 메타데이터 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>메타데이터</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center space-x-2 text-sm">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">등록일:</span>
-                <span>{formatDate(product.created_at)}</span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm">
-                <Calendar className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">수정일:</span>
-                <span>
-                  {formatDate(product.updated_at || product.created_at)}
-                </span>
-              </div>
-              <div className="flex items-center space-x-2 text-sm">
-                <Package className="w-4 h-4 text-muted-foreground" />
-                <span className="text-muted-foreground">상품 ID:</span>
-                <code className="px-2 py-1 bg-muted rounded text-xs">
-                  {product.product_id}
-                </code>
               </div>
             </CardContent>
           </Card>
