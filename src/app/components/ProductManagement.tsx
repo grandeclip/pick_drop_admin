@@ -62,7 +62,9 @@ interface ProductManagementProps {
   onNavigateToCategory?: () => void;
 }
 
-export default function ProductManagement({ onNavigateToCategory }: ProductManagementProps = {}) {
+export default function ProductManagement({
+  onNavigateToCategory,
+}: ProductManagementProps = {}) {
   const [products, setProducts] = useState<Product[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -107,7 +109,13 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
     if (products.length > 0) {
       loadProducts(1); // 필터 변경시 첫 페이지로 이동
     }
-  }, [sortField, sortDirection, selectedBrand, categoryFilter, selectedCategory]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [
+    sortField,
+    sortDirection,
+    selectedBrand,
+    categoryFilter,
+    selectedCategory,
+  ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // 검색 및 클라이언트 정렬
   useEffect(() => {
@@ -150,12 +158,7 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
     // created_at 정렬과 브랜드/카테고리 필터링은 서버에서 이미 처리됨
 
     setFilteredProducts(filtered);
-  }, [
-    products,
-    searchQuery,
-    sortField,
-    sortDirection,
-  ]);
+  }, [products, searchQuery, sortField, sortDirection]);
 
   const loadProducts = async (page = 1, perPage = itemsPerPage) => {
     setIsLoading(true);
@@ -337,8 +340,8 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
   // 상세 페이지 렌더링
   if (currentView === "detail" && selectedProductId) {
     return (
-      <ProductDetail 
-        productId={selectedProductId} 
+      <ProductDetail
+        productId={selectedProductId}
         onBack={handleBackToList}
         onNavigateToCategory={onNavigateToCategory}
       />
@@ -542,7 +545,7 @@ export default function ProductManagement({ onNavigateToCategory }: ProductManag
                           {product.product_sets &&
                             product.product_sets.length > 0 && (
                               <div className="text-xs text-muted-foreground mt-1">
-                                상품세트 {product.product_sets.length}개
+                                기획 세트 {product.product_sets.length}개
                               </div>
                             )}
                         </div>

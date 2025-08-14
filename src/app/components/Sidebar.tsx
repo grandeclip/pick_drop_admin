@@ -1,12 +1,35 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { Package, Archive, Star, Tag, ChevronRight, List, Folder } from "lucide-react";
+import {
+  Package,
+  Archive,
+  Star,
+  Tag,
+  ChevronRight,
+  List,
+  Folder,
+  Home,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface SidebarProps {
-  activeTab: "product" | "productSet" | "mdpick" | "brand" | "productManage" | "categoryManage";
+  activeTab:
+    | "product"
+    | "productSet"
+    | "mdpick"
+    | "brand"
+    | "productManage"
+    | "categoryManage"
+    | "homeManage";
   setActiveTab: (
-    tab: "product" | "productSet" | "mdpick" | "brand" | "productManage" | "categoryManage"
+    tab:
+      | "product"
+      | "productSet"
+      | "mdpick"
+      | "brand"
+      | "productManage"
+      | "categoryManage"
+      | "homeManage"
   ) => void;
 }
 
@@ -32,7 +55,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     },
     {
       id: "productSet" as const,
-      label: "상품세트 등록",
+      label: "기획 세트 등록",
       description: "여러 상품을 묶어서 세트로 구성",
       icon: Archive,
       color: "from-emerald-500 to-emerald-600",
@@ -65,6 +88,15 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       color: "from-green-500 to-green-600",
       bgColor: "bg-green-50",
       iconBg: "bg-green-500",
+    },
+    {
+      id: "homeManage" as const,
+      label: "홈 화면 관리",
+      description: "홈 화면 카테고리 순서와 노출 설정",
+      icon: Home,
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-50",
+      iconBg: "bg-blue-500",
     },
   ];
 

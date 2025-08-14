@@ -115,7 +115,7 @@ export default function ProductSetForm({
           </svg>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">상품세트 등록</h2>
+          <h2 className="text-2xl font-bold text-slate-800">기획 세트 등록</h2>
           <p className="text-slate-600">상품을 다양한 플랫폼에 등록해보세요</p>
         </div>
       </div>
@@ -292,7 +292,7 @@ export default function ProductSetForm({
             type="submit"
             className="btn bg-gradient-to-r from-blue-500 to-indigo-600 text-white border-none hover:from-blue-600 hover:to-indigo-700 rounded-2xl h-14 text-lg font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 p-4"
           >
-            상품세트 등록하기
+            기획 세트 등록하기
           </button>
         </div>
       </form>

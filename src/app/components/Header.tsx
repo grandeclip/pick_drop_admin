@@ -114,7 +114,7 @@ export default function Header() {
                 )}
               </h1>
               <p className="text-xs text-muted-foreground">
-                상품 및 상품세트 관리 시스템
+                상품 및 기획 세트 관리 시스템
               </p>
             </div>
           </div>

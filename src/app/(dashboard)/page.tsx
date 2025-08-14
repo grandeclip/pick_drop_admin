@@ -9,6 +9,7 @@ import MDPickForm from "../components/MDPickForm";
 import BrandForm from "../components/BrandForm";
 import ProductManagement from "../components/ProductManagement";
 import CategoryManagement from "../components/CategoryManagement";
+import HomeManagement from "../components/HomeManagement";
 import { supabase } from "../lib/supabase";
 
 function parseLinks(rawInput: string): string[] {
@@ -22,7 +23,13 @@ function parseLinks(rawInput: string): string[] {
 export default function Home() {
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "product" | "productSet" | "mdpick" | "brand" | "productManage" | "categoryManage"
+    | "product"
+    | "productSet"
+    | "mdpick"
+    | "brand"
+    | "productManage"
+    | "categoryManage"
+    | "homeManage"
   >("brand");
 
   const handleNavigateToCategory = () => {
@@ -40,7 +47,7 @@ export default function Home() {
     brand_id: "",
   });
 
-  // 상품세트 등록 상태
+  // 기획 세트 등록 상태
   const [productSetData, setProductSetData] = useState({
     productId: "",
     link: "",
@@ -173,7 +180,7 @@ export default function Home() {
     //   const result = await insertProductSet(productSetData);
 
     //   if (result.success) {
-    //     alert("상품세트가 성공적으로 등록되었습니다.");
+    //     alert("기획 세트가 성공적으로 등록되었습니다.");
     //   } else {
     //     alert(`등록 실패: ${result.error}`);
     //   }
@@ -231,9 +238,13 @@ export default function Home() {
               ) : activeTab === "brand" ? (
                 <BrandForm />
               ) : activeTab === "productManage" ? (
-                <ProductManagement onNavigateToCategory={handleNavigateToCategory} />
+                <ProductManagement
+                  onNavigateToCategory={handleNavigateToCategory}
+                />
               ) : activeTab === "categoryManage" ? (
                 <CategoryManagement />
+              ) : activeTab === "homeManage" ? (
+                <HomeManagement />
               ) : null}
             </div>
           </div>
