@@ -9,6 +9,7 @@ import {
   List,
   Folder,
   Home,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -20,7 +21,8 @@ interface SidebarProps {
     | "brand"
     | "productManage"
     | "categoryManage"
-    | "homeManage";
+    | "homeManage"
+    | "cacheManage";
   setActiveTab: (
     tab:
       | "product"
@@ -30,6 +32,7 @@ interface SidebarProps {
       | "productManage"
       | "categoryManage"
       | "homeManage"
+      | "cacheManage"
   ) => void;
 }
 
@@ -97,6 +100,15 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       color: "from-blue-500 to-blue-600",
       bgColor: "bg-blue-50",
       iconBg: "bg-blue-500",
+    },
+    {
+      id: "cacheManage" as const,
+      label: "캐시 관리",
+      description: "캐시 무효화 및 관리",
+      icon: Database,
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-50",
+      iconBg: "bg-purple-500",
     },
   ];
 

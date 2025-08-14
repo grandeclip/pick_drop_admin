@@ -10,6 +10,7 @@ import BrandForm from "../components/BrandForm";
 import ProductManagement from "../components/ProductManagement";
 import CategoryManagement from "../components/CategoryManagement";
 import HomeManagement from "../components/HomeManagement";
+import CacheManagement from "../components/CacheManagement";
 import { supabase } from "../lib/supabase";
 
 function parseLinks(rawInput: string): string[] {
@@ -30,6 +31,7 @@ export default function Home() {
     | "productManage"
     | "categoryManage"
     | "homeManage"
+    | "cacheManage"
   >("brand");
 
   const handleNavigateToCategory = () => {
@@ -245,6 +247,8 @@ export default function Home() {
                 <CategoryManagement />
               ) : activeTab === "homeManage" ? (
                 <HomeManagement />
+              ) : activeTab === "cacheManage" ? (
+                <CacheManagement />
               ) : null}
             </div>
           </div>
