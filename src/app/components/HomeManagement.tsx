@@ -79,7 +79,7 @@ export default function HomeManagement() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadData = async () => {
     setIsLoading(true);
@@ -446,7 +446,7 @@ export default function HomeManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {homeCategoryOrders.map((order, index) => (
+                {homeCategoryOrders.map((order) => (
                   <TableRow
                     key={order.category_id}
                     className="hover:bg-muted/50"
@@ -628,7 +628,7 @@ export default function HomeManagement() {
               </div>
             ) : (
               <div className="space-y-3">
-                {categoryVersions.map((version, index) => (
+                {categoryVersions.map((version) => (
                   <div
                     key={version.created_at}
                     className={`border rounded-lg p-4 ${
@@ -673,7 +673,7 @@ export default function HomeManagement() {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
-                      {version.categories.map((cat, catIndex) => {
+                      {version.categories.map((cat) => {
                         return (
                           <div
                             key={cat.category_id}
